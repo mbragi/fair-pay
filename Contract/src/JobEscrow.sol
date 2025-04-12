@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+// import "@openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
 
-contract JobEscrow is ReentrancyGuard {
+contract JobEscrow {
     enum JobStatus { Created, InProgress, Completed, Cancelled }
     enum MilestoneStatus { NotStarted, InProgress, Completed, Disputed }
     
@@ -29,19 +29,18 @@ contract JobEscrow is ReentrancyGuard {
     uint256 public platformFee; // Fee in basis points
     uint256 public createdAt;
     
-    // Worker information
+    
     address public worker;
     bool public workerConfirmed;
     
-    // Milestones
+    
     Milestone[] public milestones;
     uint256 public currentMilestoneIndex;
     
-    // Dispute resolution (basic implementation)
+    // Dispute resolution 
     uint256 public constant DISPUTE_RESOLUTION_PERIOD = 7 days;
     mapping(uint256 => uint256) public disputeTimestamps;
     
-    // Events
     event JobStarted(address indexed worker);
     event MilestoneAdded(uint256 indexed index, string title, uint256 amount);
     event MilestoneUpdated(uint256 indexed index, MilestoneStatus status);
@@ -53,9 +52,7 @@ contract JobEscrow is ReentrancyGuard {
     event DisputeRaised(uint256 indexed milestoneIndex);
     event DisputeResolved(uint256 indexed milestoneIndex, bool workerFavored);
     
-    /**
-     * @dev Constructor for creating a new job
-     */
+    
     constructor(
         address _platform,
         address _employer,
@@ -78,7 +75,6 @@ contract JobEscrow is ReentrancyGuard {
         status = JobStatus.Created;
         createdAt = block.timestamp;
         
-        // Initialize milestones array with empty placeholders
         for (uint256 i = 0; i < _milestoneCount; i++) {
             milestones.push(Milestone({
                 title: "",
@@ -110,10 +106,8 @@ contract JobEscrow is ReentrancyGuard {
         _;
     }
     
-    /**
-     * @dev Deposit funds to escrow
-     */
-    function depositFunds() external payable nonReentrant {
+    
+    function depositFunds() external payable {
         require(status == JobStatus.Created || status == JobStatus.InProgress, "Cannot deposit funds now");
         
         if (token == address(0)) {
@@ -171,10 +165,6 @@ contract JobEscrow is ReentrancyGuard {
         require(totalAmount == totalPayment, "Total milestone amounts must equal total payment");
     }
     
-    /**
-     * @dev Assign a worker to the job
-     * @param _worker Address of the worker to assign
-     */
     function assignWorker(address _worker) external onlyEmployer {
         require(status == JobStatus.Created, "Job already started");
         require(_worker != address(0) && _worker != employer, "Invalid worker address");
@@ -182,9 +172,6 @@ contract JobEscrow is ReentrancyGuard {
         worker = _worker;
     }
     
-    /**
-     * @dev Worker confirms job acceptance
-     */
     function confirmJob() external {
         require(msg.sender == worker, "Only assigned worker can confirm");
         require(!workerConfirmed, "Already confirmed");
@@ -228,11 +215,8 @@ contract JobEscrow is ReentrancyGuard {
         emit MilestoneUpdated(_milestoneIndex, MilestoneStatus.Completed);
     }
     
-    /**
-     * @dev Employer approves a completed milestone and releases payment
-     * @param _milestoneIndex Index of the milestone to approve
-     */
-    function approveMilestone(uint256 _milestoneIndex) external onlyEmployer jobActive nonReentrant {
+    
+    function approveMilestone(uint256 _milestoneIndex) external onlyEmployer jobActive {
         require(milestones[_milestoneIndex].status == MilestoneStatus.Completed, "Milestone not completed");
         
         uint256 paymentAmount = milestones[_milestoneIndex].amount;
@@ -267,10 +251,7 @@ contract JobEscrow is ReentrancyGuard {
         }
     }
     
-    /**
-     * @dev Raises a dispute for a milestone
-     * @param _milestoneIndex Index of the disputed milestone
-     */
+    
     function raiseDispute(uint256 _milestoneIndex) external onlyEmployer jobActive {
         require(milestones[_milestoneIndex].status == MilestoneStatus.Completed, "Can only dispute completed milestones");
         
@@ -290,7 +271,7 @@ contract JobEscrow is ReentrancyGuard {
         uint256 _milestoneIndex, 
         bool _workerFavored,
         uint256 _employerRefundAmount
-    ) external onlyPlatform nonReentrant {
+    ) external onlyPlatform {
         require(milestones[_milestoneIndex].status == MilestoneStatus.Disputed, "Milestone not disputed");
         
         if (_workerFavored) {
@@ -397,7 +378,7 @@ contract JobEscrow is ReentrancyGuard {
     /**
      * @dev Cancel a job (only possible before worker confirms)
      */
-    function cancelJob() external onlyEmployer nonReentrant {
+    function cancelJob() external onlyEmployer {
         require(status == JobStatus.Created, "Can only cancel before job starts");
         require(!workerConfirmed, "Worker already confirmed job");
         
@@ -419,9 +400,7 @@ contract JobEscrow is ReentrancyGuard {
         emit JobCancelled();
     }
 
-    /**
-     * @dev Get all milestones
-     */
+    
     function getAllMilestones() external view returns (
         string[] memory titles,
         string[] memory descriptions,
@@ -447,9 +426,7 @@ contract JobEscrow is ReentrancyGuard {
         return (titles, descriptions, amounts, deadlines, statuses);
     }
     
-    /**
-     * @dev View function to get job details
-     */
+   
     function getJobDetails() external view returns (
         address _employer,
         address _worker,
@@ -472,6 +449,6 @@ contract JobEscrow is ReentrancyGuard {
         );
     }
     
-    // Function to receive ETH
+    
     receive() external payable {}
 }
