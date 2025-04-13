@@ -1,12 +1,9 @@
 import LandingPage from "./page/landing-page/landing-page";
 import HowItWorksSection from "./components/landing-page-component/howitworks-section";
-import { WagmiProvider } from "wagmi";
 import "@rainbow-me/rainbowkit/styles.css";
-import { getDefaultConfig, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import ClientPage from "./page/client-page/client-page";
 import ServiceProviderDashboard from "./page/employees-page/ServiceProviderDashboard";
 
-import {baseSepolia } from "wagmi/chains";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -33,20 +30,13 @@ function App() {
   )
 
   const queryClient = new QueryClient();
-  const config = getDefaultConfig({
-    appName: "My RainbowKit App",
-    projectId: "YOUR_PROJECT_ID",
-    chains: [baseSepolia],
-  });
 
   return (
-    <WagmiProvider config={config}>
+    // <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>
           <RouterProvider router={router} />
-        </RainbowKitProvider>
       </QueryClientProvider>
-    </WagmiProvider>
+    // </WagmiProvider>
   );
 }
 

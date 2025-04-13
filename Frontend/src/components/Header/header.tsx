@@ -1,15 +1,21 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import ConnectModal from "../modal/connectModal";
+
 const Header = () => {
+  const [showModal, setShowModal] = useState(false);
+
   return (
-    <div>
-      <nav className="flex items-center justify-between py-6 border-b-2 shadow-lg px-4 sm:px-6 lg:px-8">
+    <header className="bg-white shadow-md">
+      <nav className="flex items-center justify-between py-6 px-4 sm:px-6 lg:px-8 border-b">
+        {/* Logo */}
         <div className="flex items-center">
-          <Link to={"/"} className="text-2xl font-bold text-blue-900">
+          <Link to="/" className="text-2xl font-bold text-blue-900">
             Fair<span className="text-blue-600">Pay</span>
           </Link>
         </div>
 
+        {/* Navigation Links */}
         <div className="hidden md:flex items-center space-x-8">
           <a
             href="#features"
@@ -17,10 +23,12 @@ const Header = () => {
           >
             Features
           </a>
-          <Link to={"/howitworks"}  className="text-gray-600 hover:text-blue-600 font-medium">
-          How it Works
+          <Link
+            to="/howitworks"
+            className="text-gray-600 hover:text-blue-600 font-medium"
+          >
+            How it Works
           </Link>
-         
           <a
             href="#testimonials"
             className="text-gray-600 hover:text-blue-600 font-medium"
@@ -29,41 +37,20 @@ const Header = () => {
           </a>
         </div>
 
+        {/* Get Started Button */}
         <div className="flex items-center space-x-4">
-        <div className="bg-blue-600 text-white px-8 py-3 rounded-lg  transition-all shadow-lg ml-5">
-            <ConnectButton.Custom>
-              {({ account, openAccountModal, openConnectModal, mounted }) => {
-                const connected = mounted && account;
-
-                return (
-                  <div>
-                    {connected ? (
-                      <button
-                        onClick={openAccountModal}
-                        className="flex items-center"
-                      >
-                        <span className="text-white font-medium">
-                          {account.displayName}
-                        </span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={openConnectModal}
-                        className="flex items-center"
-                      >
-                        <span className="text-white font-medium">
-                          Connect Wallet
-                        </span>
-                      </button>
-                    )}
-                  </div>
-                );
-              }}
-            </ConnectButton.Custom>
-          </div>
+          <button
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow hover:bg-blue-700 transition"
+            onClick={() => setShowModal(true)}
+          >
+            Get Started
+          </button>
         </div>
       </nav>
-    </div>
+
+      {/* Connect Modal */}
+      <ConnectModal open={showModal} onClose={() => setShowModal(false)} />
+    </header>
   );
 };
 
