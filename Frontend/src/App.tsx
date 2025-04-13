@@ -33,20 +33,10 @@ function App() {
   )
 
   const queryClient = new QueryClient();
-  const config = getDefaultConfig({
-    appName: "My RainbowKit App",
-    projectId: "YOUR_PROJECT_ID",
-    chains: [baseSepolia],
-  });
-
   return (
-    <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>
           <RouterProvider router={router} />
-        </RainbowKitProvider>
       </QueryClientProvider>
-    </WagmiProvider>
   );
 }
 
