@@ -4,10 +4,10 @@ pragma solidity ^0.8.19;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-// import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./JobEscrow.sol";
 
-contract FairPay is Ownable(msg.sender){
+contract FairPay is Ownable(msg.sender), ReentrancyGuard{
     using SafeERC20 for IERC20;
 
     uint256 public platformFee = 250; // 2.5% in basis points
@@ -129,11 +129,12 @@ contract FairPay is Ownable(msg.sender){
         emit PlatformFeeUpdated(_newFee);
     }
 
-    function withdrawFees(address _token) external onlyOwner {
+    function withdrawFees(address _token) external onlyOwner nonReentrant{
         if (_token == address(0)) {
             uint256 balance = address(this).balance;
             require(balance > 0, "No ETH to withdraw");
-            payable(owner()).transfer(balance);
+            (bool success, ) = payable(owner()).call{value: balance}("");
+            require(success, "ETH transfer failed");
         } else {
             uint256 balance = IERC20(_token).balanceOf(address(this));
             require(balance > 0, "No tokens to withdraw");
