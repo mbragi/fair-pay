@@ -1,16 +1,14 @@
 import LandingPage from "./page/landing-page/landing-page";
 import HowItWorksSection from "./components/landing-page-component/howitworks-section";
-import { WagmiProvider } from "wagmi";
+import { WagmiProvider } from "../node_modules/wagmi/dist/types/exports";
 import "@rainbow-me/rainbowkit/styles.css";
 import { getDefaultConfig, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import ClientPage from "./page/client-page/client-page";
 import ServiceProviderDashboard from "./page/employees-page/ServiceProviderDashboard";
 
-import {baseSepolia } from "wagmi/chains";
+import { baseSepolia } from "../node_modules/wagmi/dist/types/exports/chains";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-
 
 import {
   RouterProvider,
@@ -24,21 +22,20 @@ function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(
       <Route path="/" element={<Root />}>
-         <Route index element={<LandingPage />} />
-          <Route path="/howitworks" element={<HowItWorksSection/>}/>
-          <Route path="/clientpage" element={<ClientPage/>}/>
-          <Route path="/providerspage" element={<ServiceProviderDashboard/>}/>
+        <Route index element={<LandingPage />} />
+        <Route path="/howitworks" element={<HowItWorksSection />} />
+        <Route path="/clientpage" element={<ClientPage />} />
+        <Route path="/providerspage" element={<ServiceProviderDashboard />} />
       </Route>
     )
-  )
+  );
 
   const queryClient = new QueryClient();
   return (
-      <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
-      </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>
   );
 }
 
-
-export default App
+export default App;

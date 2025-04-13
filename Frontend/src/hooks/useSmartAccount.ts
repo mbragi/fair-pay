@@ -1,6 +1,6 @@
-import { useConnect } from "thirdweb/react";
-import { inAppWallet } from "thirdweb/wallets";
-import { sepolia } from "thirdweb/chains";
+import { useConnect } from "../../node_modules/thirdweb/dist/types/exports/react";
+import { inAppWallet } from "../../node_modules/thirdweb/dist/types/exports/wallets";
+import { sepolia } from "../../node_modules/thirdweb/dist/types/exports/chains";
 import { client } from "../client"; // assumes you export createThirdwebClient here
 
 type Strategy = "google" | "passkey";
@@ -21,17 +21,17 @@ const useSmartAccount = (strategy: Strategy) => {
       });
 
       await wallet.connect(
-        strategy === 'passkey'
+        strategy === "passkey"
           ? {
               client,
               chain: sepolia,
-              strategy: 'passkey',
-              type: 'sign-in',
+              strategy: "passkey",
+              type: "sign-in",
             }
           : {
               client,
               chain: sepolia,
-              strategy: 'google',
+              strategy: "google",
             }
       );
 
