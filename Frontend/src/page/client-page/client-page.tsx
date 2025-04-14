@@ -17,6 +17,7 @@ const ClientPage: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'organizations' | 'jobs' | 'work'>('organizations');
   const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedJob, setSelectedJob] = useState<any>(null);
 
   const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
