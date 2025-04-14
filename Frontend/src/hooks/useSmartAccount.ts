@@ -1,6 +1,6 @@
 import { useConnect } from "thirdweb/react";
 import { inAppWallet } from "thirdweb/wallets";
-import { sepolia } from "thirdweb/chains";
+import { baseSepolia } from "thirdweb/chains";
 import { client } from "../client"; // assumes you export createThirdwebClient here
 
 type Strategy = "google" | "passkey";
@@ -9,8 +9,7 @@ const useSmartAccount = (strategy: Strategy) => {
   const { connect, isConnecting, error } = useConnect({
     client,
     accountAbstraction: {
-      factoryAddress: '0x1ab5a786c3a0934742921a9dea0aa0a64d71469c',
-      chain: sepolia,
+      chain: baseSepolia,
       sponsorGas: true,
     },
   });
@@ -21,7 +20,7 @@ const useSmartAccount = (strategy: Strategy) => {
         auth: { options: [strategy] , mode: 'popup'},
         smartAccount: {
           sponsorGas: true,
-          chain: sepolia,
+          chain: baseSepolia,
         }
       });
 
@@ -29,13 +28,13 @@ const useSmartAccount = (strategy: Strategy) => {
         strategy === 'passkey'
           ? {
               client,
-              chain: sepolia,
+              chain: baseSepolia,
               strategy: 'passkey',
               type: 'sign-in',
             }
           : {
               client,
-              chain: sepolia,
+              chain: baseSepolia,
               strategy: 'google',
             }
       );

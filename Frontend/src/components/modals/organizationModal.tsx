@@ -1,25 +1,28 @@
-import React from "react";
+import React, { useState } from "react";
 
 interface Props {
  isOpen: boolean;
  onClose: () => void;
  onCreate: (name: string, description: string) => void;
- name: string;
- description: string;
- setName: (val: string) => void;
- setDescription: (val: string) => void;
 }
 
 const CreateOrganizationModal: React.FC<Props> = ({
  isOpen,
  onClose,
  onCreate,
- name,
- description,
- setName,
- setDescription,
 }) => {
+ const [name, setName] = useState("");
+ const [description, setDescription] = useState("");
+
  if (!isOpen) return null;
+
+ const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+  onCreate(name, description);
+  // Reset form after submission
+  setName("");
+  setDescription("");
+ };
 
  return (
   <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-50">
@@ -30,12 +33,7 @@ const CreateOrganizationModal: React.FC<Props> = ({
       ✕
      </button>
     </div>
-    <form
-     onSubmit={(e) => {
-      e.preventDefault();
-      onCreate(name, description);
-     }}
-    >
+    <form onSubmit={handleSubmit}>
      <div className="mb-4">
       <label className="block text-gray-700 mb-2">Organization Name</label>
       <input

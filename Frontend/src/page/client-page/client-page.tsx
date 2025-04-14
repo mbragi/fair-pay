@@ -26,10 +26,7 @@ const ClientPage: React.FC = () => {
   const [showMilestonesModal, setShowMilestonesModal] = useState(false);
 
   const [toast, setToast] = useState({ message: '', isError: false, visible: false });
-  const [orgName, setOrgName] = useState('');
-  const [orgDescription, setOrgDescription] = useState('');
-
-  const { organizations, setOrganizations } = useOrganizations();
+  const { organizations,createOrganization } = useOrganizations();
   const { jobs, setJobs } = useJobs(selectedOrgId);
   const { myWork } = useMyWork();
 
@@ -107,14 +104,10 @@ const ClientPage: React.FC = () => {
         <CreateOrganizationModal
           isOpen={showCreateOrgModal}
           onClose={() => setShowCreateOrgModal(false)}
-          onCreate={org => {
-            setOrganizations(prev => [...prev, org]);
+          onCreate={(name, description) => {
+            createOrganization(name, description)
             showToast("Organization created successfully");
           }}
-          name={orgName}
-          description={orgDescription}
-          setName={setOrgName}
-          setDescription={setOrgDescription}
         />
 
         <CreateJobModal
