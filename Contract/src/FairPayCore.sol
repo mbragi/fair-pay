@@ -16,7 +16,13 @@ contract FairPayCore is Ownable, ReentrancyGuard {
     FeesManager public feesManager;
     address public jobFactory;
     
+    // Mapping to track jobs assigned to workers
+    mapping(address => address[]) public workerJobs;
+    // Mapping to verify if an address is a valid job contract
+    mapping(address => bool) public validJobContracts;
+    
     event JobCreated(uint256 indexed orgId, address indexed jobAddress);
+    event WorkerAssigned(address indexed worker, address indexed jobAddress);
     
     constructor(
     address _organizationManager,
@@ -55,9 +61,82 @@ contract FairPayCore is Ownable, ReentrancyGuard {
             feesManager.getPlatformFee()
         );
         
+        // Register the new job contract as valid
+        validJobContracts[newJob] = true;
+        
         organizationManager.addJobToOrganization(_orgId, newJob);
         emit JobCreated(_orgId, newJob);
         return newJob;
+    }
+    
+    // Function to register a worker for a job
+    function registerWorkerJob(address _worker) external {
+        require(validJobContracts[msg.sender], "Caller is not a valid job contract");
+        
+        // Verify that the worker is actually assigned to this job
+        (, address assignedWorker,,,,,,) = IJobEscrow(msg.sender).getJobDetails();
+        require(assignedWorker == _worker, "Worker not assigned to this job");
+        
+        // additional check to ensure the worker has confirmed the job
+        require(IJobEscrow(msg.sender).workerConfirmed(), "Worker has not confirmed this job");
+        
+        workerJobs[_worker].push(msg.sender);
+        emit WorkerAssigned(_worker, msg.sender);
+    }
+    
+    // Function to retrieve all jobs assigned to a worker
+    function getWorkerJobs(address _worker) external view returns (address[] memory) {
+        return workerJobs[_worker];
+    }
+    
+    // Function to check if a job is assigned to a worker
+    function isWorkerAssignedToJob(address _worker, address _jobAddress) external view returns (bool) {
+        address[] memory jobs = workerJobs[_worker];
+        for (uint256 i = 0; i < jobs.length; i++) {
+            if (jobs[i] == _jobAddress) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // Function to get job details for all jobs assigned to a worker
+    function getWorkerJobDetails(address _worker) external view returns (
+        address[] memory jobAddresses,
+        string[] memory titles,
+        string[] memory descriptions,
+        uint256[] memory totalPayments,
+        uint8[] memory statuses
+    ) {
+        address[] memory jobs = workerJobs[_worker];
+        jobAddresses = new address[](jobs.length);
+        titles = new string[](jobs.length);
+        descriptions = new string[](jobs.length);
+        totalPayments = new uint256[](jobs.length);
+        statuses = new uint8[](jobs.length);
+        
+        for (uint256 i = 0; i < jobs.length; i++) {
+            jobAddresses[i] = jobs[i];
+            
+            // Get job details from the JobEscrow contract
+            (
+                ,  // employer
+                ,  // worker
+                string memory title,
+                string memory description,
+                uint256 totalPayment,
+                uint8 status,
+                ,  // milestoneCount
+                   // currentMilestone
+            ) = IJobEscrow(jobs[i]).getJobDetails();
+            
+            titles[i] = title;
+            descriptions[i] = description;
+            totalPayments[i] = totalPayment;
+            statuses[i] = status;
+        }
+        
+        return (jobAddresses, titles, descriptions, totalPayments, statuses);
     }
     
     function updatePlatformFee(uint256 _newFee) external onlyOwner {
@@ -79,4 +158,19 @@ contract FairPayCore is Ownable, ReentrancyGuard {
     
     receive() external payable {}
     fallback() external payable {}
+}
+
+// Interface for JobEscrow to call getJobDetails
+interface IJobEscrow {
+    function getJobDetails() external view returns (
+        address _employer,
+        address _worker,
+        string memory _title,
+        string memory _description,
+        uint256 _totalPayment,
+        uint8 _status,
+        uint256 _milestoneCount,
+        uint256 _currentMilestone
+    );
+    function workerConfirmed() external view returns (bool);
 }

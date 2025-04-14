@@ -1,49 +1,61 @@
-import React from "react";
+import React, { useState } from "react";
 
 interface Props {
  isOpen: boolean;
  onClose: () => void;
- onCreate: () => void;
- title: string;
- description: string;
- payment: string;
- milestoneCount: number;
- setTitle: (val: string) => void;
- setDescription: (val: string) => void;
- setPayment: (val: string) => void;
- setMilestoneCount: (val: number) => void;
+ onCreate: (job: {
+  title: string;
+  description: string;
+  payment: string;
+  milestoneCount: number;
+ }) => Promise<void> | void;
 }
 
 const CreateJobModal: React.FC<Props> = ({
  isOpen,
  onClose,
  onCreate,
- title,
- description,
- payment,
- milestoneCount,
- setTitle,
- setDescription,
- setPayment,
- setMilestoneCount,
 }) => {
+ const [title, setTitle] = useState("");
+ const [description, setDescription] = useState("");
+ const [payment, setPayment] = useState("");
+ const [milestoneCount, setMilestoneCount] = useState(1);
+ const [isSubmitting, setIsSubmitting] = useState(false);
+
  if (!isOpen) return null;
+
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsSubmitting(true);
+  try {
+   await onCreate({
+    title,
+    description,
+    payment,
+    milestoneCount,
+   });
+
+   // Reset form and close modal after successful create
+   setTitle("");
+   setDescription("");
+   setPayment("");
+   setMilestoneCount(1);
+   onClose();
+  } catch (err) {
+   console.error("Create job failed:", err);
+  } finally {
+   setIsSubmitting(false);
+  }
+ };
 
  return (
   <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-50">
    <div className="bg-white rounded-lg p-8 max-w-md w-full">
     <div className="flex justify-between items-center mb-6">
      <h3 className="text-xl font-bold">Create New Job</h3>
-     <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-      ✕
-     </button>
+     <button onClick={onClose} className="text-gray-500 hover:text-gray-700">✕</button>
     </div>
-    <form
-     onSubmit={(e) => {
-      e.preventDefault();
-      onCreate();
-     }}
-    >
+    <form onSubmit={handleSubmit}>
      <div className="mb-4">
       <label className="block text-gray-700 mb-2">Job Title</label>
       <input
@@ -76,7 +88,7 @@ const CreateJobModal: React.FC<Props> = ({
        required
       />
      </div>
-     <div className="mb-4">
+     <div className="mb-6">
       <label className="block text-gray-700 mb-2">Number of Milestones</label>
       <input
        type="number"
@@ -92,12 +104,17 @@ const CreateJobModal: React.FC<Props> = ({
       <button
        type="button"
        onClick={onClose}
+       disabled={isSubmitting}
        className="mr-4 text-gray-600 hover:text-gray-800"
       >
        Cancel
       </button>
-      <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded">
-       Continue
+      <button
+       type="submit"
+       disabled={isSubmitting}
+       className={`px-4 py-2 rounded text-white ${isSubmitting ? 'bg-gray-400' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+      >
+       {isSubmitting ? "Creating..." : "Continue"}
       </button>
      </div>
     </form>
