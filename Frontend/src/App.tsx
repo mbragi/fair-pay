@@ -32,7 +32,8 @@ function App() {
   const queryClient = new QueryClient();
 
   return (
-    // <WagmiProvider config={config}>
+    // <WagmiProvider config={config}>    <ThirdwebProvider>
+
       <QueryClientProvider client={queryClient}>
           <RouterProvider router={router} />
       </QueryClientProvider>

@@ -520,7 +520,7 @@ const ClientPage: React.FC = () => {
             )}
 
             {/* Work Tab Content */}
-            {activeTab === 'work' && (
+            {/* {activeTab === 'work' && (
               <div>
                 <div className="mb-6">
                   <h2 className="text-2xl font-bold text-gray-800">My Work</h2>
@@ -574,7 +574,7 @@ const ClientPage: React.FC = () => {
                   )}
                 </div>
               </div>
-            )}
+            )} */}
           </>
         )}
       </div>
