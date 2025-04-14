@@ -6,6 +6,10 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
+interface IFairPayCore {
+    function registerWorkerJob(address _worker) external;
+}
+
 contract JobEscrow is ReentrancyGuard, Initializable {
     using SafeERC20 for IERC20;
     
@@ -208,6 +212,7 @@ contract JobEscrow is ReentrancyGuard, Initializable {
         status = JobStatus.InProgress;
         milestones[0].status = MilestoneStatus.InProgress;
         
+        IFairPayCore(platform).registerWorkerJob(worker);
         emit JobStarted(worker);
     }
     
