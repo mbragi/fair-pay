@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useOrganizations } from "../../hooks/useOrganisation";
 import { useJobs } from "../../hooks/useJobs";
-import { useMyWork } from "../../hooks/useWork";
+// import { useMyWork } from "../../hooks/useWork";
 import OrganizationList from "../../components/lists/organisationList";
 import JobList from "../../components/lists/jobList";
-import WorkList from "../../components/lists/workList";
+// import WorkList from "../../components/lists/workList";
 import CreateOrganizationModal from "../../components/modals/organizationModal";
 import CreateJobModal from "../../components/modals/createJobmodal";
 import JobDetailsModal from "../../components/modals/jobdetailsModal";
@@ -13,7 +13,7 @@ import MilestoneModal from "../../components/modals/milestoneModal";
 import Toast from "../../components/common/Toast";
 
 const ClientPage: React.FC = () => {
-  const { isConnected } = useAuth();
+  const { address, isConnected } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'organizations' | 'jobs' | 'work'>('organizations');
   const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
@@ -26,9 +26,9 @@ const ClientPage: React.FC = () => {
   const [showMilestonesModal, setShowMilestonesModal] = useState(false);
 
   const [toast, setToast] = useState({ message: '', isError: false, visible: false });
-  const { organizations,createOrganization } = useOrganizations();
+  const { isPending, loading, organizations, createOrganization, fetchOrganizationsByOwner } = useOrganizations();
   const { jobs, setJobs } = useJobs(selectedOrgId);
-  const { myWork } = useMyWork();
+  // const { myWork } = useMyWork();
 
   const showToast = (message: string, isError = false) => {
     setToast({ message, isError, visible: true });
@@ -76,6 +76,7 @@ const ClientPage: React.FC = () => {
               setSelectedOrgId(id);
               setActiveTab("jobs");
             }}
+            isLoading={loading}
           />
         )}
 
@@ -92,7 +93,7 @@ const ClientPage: React.FC = () => {
           />
         )}
 
-        {activeTab === "work" && (
+        {/* {activeTab === "work" && (
           <WorkList
             myWork={myWork}
             onSelectJob={job => {
@@ -100,14 +101,25 @@ const ClientPage: React.FC = () => {
               setShowJobDetailsModal(true);
             }}
           />
-        )}
+        )} */}
         <CreateOrganizationModal
+          isLoading={isPending}
           isOpen={showCreateOrgModal}
           onClose={() => setShowCreateOrgModal(false)}
-          onCreate={(name, description) => {
-            createOrganization(name, description)
-            showToast("Organization created successfully");
+          onCreate={async (name, description) => {
+            try {
+              await createOrganization(name, description);
+              setShowCreateOrgModal(false); // Close modal
+              showToast("Organization created successfully");
+              if (address) {
+                await fetchOrganizationsByOwner(address); // Refresh list
+              }
+            } catch (e) {
+              console.error(e)
+              showToast("Failed to create organization", true);
+            }
           }}
+
         />
 
         <CreateJobModal

@@ -25,7 +25,9 @@ const contract = getContract({
 export const useOrganizations = () => {
   const { address, isConnected } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [loading, setLoading] = useState(false);
+ const [loading, setLoading] = useState(false);
+ 
+ 
 
   const { mutateAsync: sendTx, isPending } = useSendTransaction();
 
@@ -120,7 +122,7 @@ export const useOrganizations = () => {
     isPending,
 
     // exposed methods
-    createOrganization,
+   createOrganization,
     addJobToOrganization,
     addMember,
     getOrganizationJobs,
