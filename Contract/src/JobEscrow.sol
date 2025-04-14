@@ -1,12 +1,12 @@
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract JobEscrow is ReentrancyGuard {
+contract JobEscrow is ReentrancyGuard, Initializable {
     using SafeERC20 for IERC20;
     
     enum JobStatus { Created, InProgress, Completed, Cancelled }
@@ -16,7 +16,7 @@ contract JobEscrow is ReentrancyGuard {
         string title;
         string description;
         uint256 amount;
-        uint256 deadline; // Optional deadline timestamp
+        uint256 deadline; 
         MilestoneStatus status;
     }
     
@@ -28,19 +28,17 @@ contract JobEscrow is ReentrancyGuard {
     string public description;
     uint256 public totalPayment;
     JobStatus public status;
-    address public token; // Address of ERC20 token or address(0) for ETH
-    uint256 public platformFee; // Fee in basis points
+    address public token; 
+    uint256 public platformFee; 
     uint256 public createdAt;
-    
     
     address public worker;
     bool public workerConfirmed;
     
-    
     Milestone[] public milestones;
     uint256 public currentMilestoneIndex;
     
-    // Dispute resolution 
+    
     uint256 public constant DISPUTE_RESOLUTION_PERIOD = 7 days;
     mapping(uint256 => uint256) public disputeTimestamps;
     
@@ -56,7 +54,7 @@ contract JobEscrow is ReentrancyGuard {
     event DisputeResolved(uint256 indexed milestoneIndex, bool workerFavored);
     
     
-    constructor(
+    function initialize(
         address _platform,
         address _employer,
         uint256 _organizationId,
@@ -66,7 +64,7 @@ contract JobEscrow is ReentrancyGuard {
         uint256 _milestoneCount,
         address _token,
         uint256 _platformFee
-    ) {
+    ) external initializer {
         platform = _platform;
         employer = _employer;
         organizationId = _organizationId;
@@ -119,7 +117,6 @@ contract JobEscrow is ReentrancyGuard {
         _;
     }
     
-    
     function depositFunds() external payable {
         require(status == JobStatus.Created || status == JobStatus.InProgress, "Cannot deposit funds now");
         
@@ -133,14 +130,7 @@ contract JobEscrow is ReentrancyGuard {
         emit FundsDeposited(totalPayment);
     }
     
-    /**
-     * @dev Initialize milestone details
-     * @param _indices Array of milestone indices to update
-     * @param _titles Array of milestone titles
-     * @param _descriptions Array of milestone descriptions
-     * @param _amounts Array of milestone amounts
-     * @param _deadlines Array of milestone deadlines (optional, 0 for none)
-     */
+    
     function setMilestones(
         uint256[] calldata _indices,
         string[] calldata _titles,
@@ -221,10 +211,7 @@ contract JobEscrow is ReentrancyGuard {
         emit JobStarted(worker);
     }
     
-    /**
-     * @dev Worker submits a milestone as complete
-     * @param _milestoneIndex Index of the completed milestone
-     */
+    
     function submitMilestone(uint256 _milestoneIndex) external onlyWorker jobActive {
         require(_milestoneIndex == currentMilestoneIndex, "Can only submit current milestone");
         require(milestones[_milestoneIndex].status == MilestoneStatus.InProgress, "Milestone not in progress");
@@ -233,7 +220,6 @@ contract JobEscrow is ReentrancyGuard {
         
         emit MilestoneUpdated(_milestoneIndex, MilestoneStatus.Completed);
     }
-    
     
     function approveMilestone(uint256 _milestoneIndex) 
         external 
@@ -265,7 +251,7 @@ contract JobEscrow is ReentrancyGuard {
         }
     }
 
-    // ========== SAFE TRANSFER FUNCTION ========== //
+   
     function _safeTransfer(address payable _to, uint256 _amount) private {
         if (token == address(0)) {
             (bool success, ) = _to.call{value: _amount}("");
@@ -274,7 +260,6 @@ contract JobEscrow is ReentrancyGuard {
             IERC20(token).safeTransfer(_to, _amount);
         }
     }
-    
     
     function raiseDispute(uint256 _milestoneIndex) external onlyEmployer jobActive {
         require(milestones[_milestoneIndex].status == MilestoneStatus.Completed, "Can only dispute completed milestones");
@@ -285,12 +270,7 @@ contract JobEscrow is ReentrancyGuard {
         emit DisputeRaised(_milestoneIndex);
     }
     
-    /**
-     * @dev Platform resolves a dispute (simplified implementation)
-     * @param _milestoneIndex Index of the disputed milestone
-     * @param _workerFavored Whether the worker's claim is upheld
-     * @param _employerRefundAmount Amount to refund to employer (if not worker-favored)
-     */
+    
     function resolveDispute(
         uint256 _milestoneIndex, 
         bool _workerFavored,
@@ -343,7 +323,6 @@ contract JobEscrow is ReentrancyGuard {
     
     /**
      * @dev Auto-resolve disputes after timeout period (can be called by worker)
-     * @param _milestoneIndex Index of the disputed milestone
      */
     function autoResolveDispute(uint256 _milestoneIndex) external onlyWorker nonReentrant {
         require(milestones[_milestoneIndex].status == MilestoneStatus.Disputed, "Milestone not disputed");
@@ -357,15 +336,8 @@ contract JobEscrow is ReentrancyGuard {
         uint256 fee = (paymentAmount * platformFee) / 10000;
         uint256 workerPayment = paymentAmount - fee;
         
-        if (token == address(0)) {
-            (bool success, ) = worker.call{value: workerPayment}("");
-            require(success, "ETH transfer to worker failed");
-            (bool feeSent, ) = platform.call{value: fee}("");
-            require(feeSent, "ETH fee transfer failed");
-        } else {
-            require(IERC20(token).transfer(worker, workerPayment), "Token transfer to worker failed");
-            require(IERC20(token).transfer(platform, fee), "Token fee transfer failed");
-        }
+        _safeTransfer(payable(worker), workerPayment);
+        _safeTransfer(payable(platform), fee);
         
         emit PaymentReleased(worker, workerPayment);
         emit DisputeResolved(_milestoneIndex, true);
@@ -398,14 +370,13 @@ contract JobEscrow is ReentrancyGuard {
         } else {
             uint256 tokenBalance = IERC20(token).balanceOf(address(this));
             if (tokenBalance > 0) {
-                require(IERC20(token).transfer(employer, tokenBalance), "Token return failed");
+                IERC20(token).safeTransfer(employer, tokenBalance);
             }
         }
         
         emit JobCancelled();
     }
 
-    
     function getAllMilestones() external view returns (
         string[] memory titles,
         string[] memory descriptions,
@@ -431,7 +402,6 @@ contract JobEscrow is ReentrancyGuard {
         return (titles, descriptions, amounts, deadlines, statuses);
     }
     
-   
     function getJobDetails() external view returns (
         address _employer,
         address _worker,
@@ -463,8 +433,6 @@ contract JobEscrow is ReentrancyGuard {
         status = JobStatus.Cancelled;
         emit JobCancelled();
     }
-
-    
     
     receive() external payable {}
 }
