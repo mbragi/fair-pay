@@ -11,7 +11,6 @@ import CreateJobModal from "../../components/modals/createJobmodal";
 import JobDetailsModal from "../../components/modals/jobdetailsModal";
 import MilestoneModal from "../../components/modals/milestoneModal";
 import Toast from "../../components/common/Toast";
-import { Job } from "../../types/generated";
 
 const ClientPage: React.FC = () => {
   const { address, isConnected } = useAuth();
@@ -28,7 +27,7 @@ const ClientPage: React.FC = () => {
 
   const [toast, setToast] = useState({ message: '', isError: false, visible: false });
   const { isPending, loading, organizations, createOrganization, fetchOrganizationsByOwner } = useOrganizations();
-  const { jobs, setJobs } = useJobs(selectedOrgId);
+  const { jobs } = useJobs(selectedOrgId);
   // const { myWork } = useMyWork();
 
   const showToast = (message: string, isError = false) => {
@@ -126,14 +125,13 @@ const ClientPage: React.FC = () => {
         <CreateJobModal
           isOpen={showCreateJobModal}
           onClose={() => setShowCreateJobModal(false)}
-          orgId={selectedOrgId}
-          onCreate={(job: Job) => {
-            setJobs(prev => [...prev, job]);
-            setSelectedJob(job);
+          onCreate={() => {
+            // setJobs(prev => [...prev, job]);
+            // setSelectedJob(job);
             setShowMilestonesModal(true);
             showToast("Job created successfully");
           }}
-          
+
         />
 
         <MilestoneModal
