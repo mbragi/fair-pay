@@ -3,17 +3,17 @@ import { useAuth } from "../../context/AuthContext";
 import { useOrganizations } from "../../hooks/useOrganisation";
 import { useJobs } from "../../hooks/useJobs";
 import { useMyWork } from "../../hooks/useWork";
-// import OrganizationList from "./OrganizationList";
-// import JobList from "./JobList";
-// import WorkList from "./WorkList";
+import OrganizationList from "../../components/lists/organisationList";
+import JobList from "../../components/lists/jobList";
+import WorkList from "../../components/lists/workList";
 import CreateOrganizationModal from "../../components/modals/organizationModal";
 import CreateJobModal from "../../components/modals/createJobmodal";
-// import JobDetailsModal from "../../components/modals/JobDetailsModal";
-// import MilestoneModal from "../../components/modals/MilestoneModal";
+import JobDetailsModal from "../../components/modals/jobdetailsModal";
+import MilestoneModal from "../../components/modals/milestoneModal";
 import Toast from "../../components/common/Toast";
 
 const ClientPage: React.FC = () => {
-  const { address, isConnected } = useAuth();
+  const { isConnected } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'organizations' | 'jobs' | 'work'>('organizations');
   const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
@@ -30,7 +30,7 @@ const ClientPage: React.FC = () => {
 
   const { organizations, setOrganizations } = useOrganizations();
   const { jobs, setJobs } = useJobs(selectedOrgId);
-  const { myWork, setMyWork } = useMyWork();
+  const { myWork } = useMyWork();
 
   const showToast = (message: string, isError = false) => {
     setToast({ message, isError, visible: true });
@@ -39,9 +39,9 @@ const ClientPage: React.FC = () => {
 
   if (!isConnected) {
     return (
-      <div className="p-8 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700">
-        <p className="font-bold">Wallet Connection Required</p>
-        <p>Please connect your wallet to use the FairPay platform.</p>
+      <div className="p-8 min-h-screen mx-auto bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700">
+          <p className="font-bold">Wallet Connection Required</p>
+          <p>Please connect your wallet to use the FairPay platform.</p>
       </div>
     );
   }
@@ -70,7 +70,7 @@ const ClientPage: React.FC = () => {
           </button>
         </div>
 
-        {/* {activeTab === "organizations" && (
+        {activeTab === "organizations" && (
           <OrganizationList
             organizations={organizations}
             onCreateClick={() => setShowCreateOrgModal(true)}
@@ -102,7 +102,7 @@ const ClientPage: React.FC = () => {
               setShowJobDetailsModal(true);
             }}
           />
-        )} */}
+        )}
         <CreateOrganizationModal
           isOpen={showCreateOrgModal}
           onClose={() => setShowCreateOrgModal(false)}
@@ -128,7 +128,7 @@ const ClientPage: React.FC = () => {
           }}
         />
 
-        {/* <MilestoneModal
+        <MilestoneModal
           isOpen={showMilestonesModal}
           job={selectedJob}
           onClose={() => setShowMilestonesModal(false)}
@@ -139,11 +139,11 @@ const ClientPage: React.FC = () => {
           isOpen={showJobDetailsModal}
           job={selectedJob}
           onClose={() => setShowJobDetailsModal(false)}
-          onUpdate={(updatedJob) => {
-            setJobs(jobs.map(j => j.address === updatedJob.address ? updatedJob : j));
-            showToast("Job updated");
-          }} */}
-        {/* /> */}
+        // onUpdate={(updatedJob) => {
+        //   setJobs(jobs.map(j => j.address === updatedJob.address ? updatedJob : j));
+        //   showToast("Job updated");
+        // }
+        />
 
         {toast.visible && <Toast message={toast.message} isError={toast.isError} visible={false} />}
       </div>
