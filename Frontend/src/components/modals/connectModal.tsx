@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import {
   useGoogleSmartAccount,
   usePasskeySmartAccount,
 } from "../../hooks/useSmartAccount";
+import { useAuth } from "../../context/AuthContext";
 
 interface ConnectModalProps {
   open: boolean;
@@ -9,10 +11,26 @@ interface ConnectModalProps {
 }
 
 const ConnectModal = ({ open, onClose }: ConnectModalProps) => {
-  const { connectWithGoogle, isConnecting: googleLoading } =
+  const { connectWithGoogle, isConnecting: googleLoading, error: googleError } =
     useGoogleSmartAccount();
-  const { connectWithPasskey, isConnecting: passkeyLoading } =
+  const { connectWithPasskey, isConnecting: passkeyLoading, error: passKeyError } =
     usePasskeySmartAccount();
+    const { isConnected, address, } = useAuth();
+  
+
+  useEffect(() => {
+    if (googleError) {
+      console.log(googleError)
+      alert(googleError)
+
+    }
+    if (passKeyError) {
+      console.log(passKeyError)
+      alert(passKeyError)
+    }
+  }, [googleError, passKeyError])
+
+  console.log(address, isConnected)
 
   if (!open) return null;
 
