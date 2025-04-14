@@ -129,4 +129,43 @@ contract OrganizationManager {
     function getOrganizationJobs(uint256 _orgId) external view validOrganization(_orgId) returns (address[] memory) {
         return organizationJobs[_orgId];
     }
+
+    function getOrganizationsByOwner(address _owner) external view returns (
+        uint256[] memory ids,
+        string[] memory names,
+        string[] memory descriptions,
+        bool[] memory activeStatuses,
+        uint256[] memory creationTimes
+    ) {
+        // First, count how many organizations the address owns
+        uint256 count = 0;
+        for (uint256 i = 1; i <= organizationCount; i++) {
+            if (organizations[i].owner == _owner) {
+                count++;
+            }
+        }
+        
+        // Initialize return arrays
+        ids = new uint256[](count);
+        names = new string[](count);
+        descriptions = new string[](count);
+        activeStatuses = new bool[](count);
+        creationTimes = new uint256[](count);
+        
+        // Populate arrays with full organization details
+        uint256 index = 0;
+        for (uint256 i = 1; i <= organizationCount; i++) {
+            if (organizations[i].owner == _owner) {
+                Organization storage org = organizations[i];
+                ids[index] = i;
+                names[index] = org.name;
+                descriptions[index] = org.description;
+                activeStatuses[index] = org.isActive;
+                creationTimes[index] = org.createdAt;
+                index++;
+            }
+        }
+        
+        return (ids, names, descriptions, activeStatuses, creationTimes);
+    }
 }
