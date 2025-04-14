@@ -1,11 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  useAccount,
-  useWalletClient,
-  usePublicClient,
-  useWriteContract
-} from 'wagmi';
+import { useState, useEffect } from 'react';
+
 import { Clock, CheckCircle, AlertTriangle, XCircle, FileText } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 interface Job {
   address: `0x${string}`;
@@ -38,14 +34,10 @@ interface Milestone {
 }
 
 // Sample ABI - replace with actual ABI
-const JobEscrowABI = [];
+// const JobEscrowABI = [];
 
 const ServiceProviderDashboard = () => {
-  // Wagmi hooks
-  const { address: account, isConnected } = useAccount();
-  const { data: walletClient } = useWalletClient();
-  const publicClient = usePublicClient();
-  const { writeContractAsync } = useWriteContract();
+  const { address: account, isConnected } = useAuth();
 
   // State
   const [assignedJobs, setAssignedJobs] = useState<Job[]>([]);
@@ -58,16 +50,17 @@ const ServiceProviderDashboard = () => {
   // Fetch all jobs assigned to this worker
   useEffect(() => {
     if (isConnected && account) {
-      fetchAssignedJobs(account);
+      fetchAssignedJobs(account as '0x');
     }
   }, [isConnected, account]);
 
   // When active job changes, fetch its details
   useEffect(() => {
-    if (activeJob && walletClient) {
+    if (activeJob) {
       loadJobDetails();
     }
-  }, [activeJob, walletClient]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeJob]);
 
   const fetchAssignedJobs = async (workerAddress: `0x${string}`) => {
     setLoading(true);

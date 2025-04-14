@@ -1,14 +1,22 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
-import { AccountAddress, AccountAvatar, AccountProvider } from "thirdweb/react";
+import { useEffect, useState } from "react";
 import ConnectModal from "../modals/connectModal";
 import { useAuth } from "../../context/AuthContext";
-import { client } from '../../client';
-import { shortenAddress } from "thirdweb/utils";
 
 const Header = () => {
   const { isConnected, address, disconnect } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (address) {
+      setModalOpen(false)
+    }
+  }, [address])
+
+  const getShortAddress = (addr: string) => {
+    if (!addr) return "";
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  };
 
   return (
     <header className="shadow-md border-b py-4 px-6 flex justify-between items-center">
@@ -21,19 +29,11 @@ const Header = () => {
         <a href="#testimonials" className="hover:text-blue-600">Testimonials</a>
       </nav>
       <div className="flex items-center">
-        {isConnected ? (
+        {isConnected || address ? (
           <div className="flex items-center space-x-2">
-            <AccountProvider
-              address={address as string} client={client}            >
-
-            <AccountAvatar
-              resolverAddress={address}
-              loadingComponent={<span>Loading...</span>}
-            />
-            <AccountAddress
-                formatFn={ shortenAddress}
-            />
-            </AccountProvider>
+            <span className="text-gray-700 font-mono text-sm">
+              {getShortAddress(address ?? '')}
+            </span>
             <button
               onClick={disconnect}
               className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
@@ -50,7 +50,7 @@ const Header = () => {
           </button>
         )}
       </div>
-      <ConnectModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
+      <ConnectModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </header>
   );
 };

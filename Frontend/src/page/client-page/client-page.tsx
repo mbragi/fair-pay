@@ -70,7 +70,7 @@ const ClientPage: React.FC = () => {
           </button>
         </div>
 
-        {activeTab === "organizations" && (
+        {/* {activeTab === "organizations" && (
           <OrganizationList
             organizations={organizations}
             onCreateClick={() => setShowCreateOrgModal(true)}
@@ -102,7 +102,7 @@ const ClientPage: React.FC = () => {
               setShowJobDetailsModal(true);
             }}
           />
-        )}
+        )} */}
         <CreateOrganizationModal
           isOpen={showCreateOrgModal}
           onClose={() => setShowCreateOrgModal(false)}

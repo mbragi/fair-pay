@@ -6,8 +6,8 @@ import { Wallet } from "thirdweb/wallets";
 interface AuthContextType {
   isConnected: boolean;
   address: string | undefined;
-  connectWithGoogle: () => Promise<void>;
-  connectWithPasskey: () => Promise<void>;
+  connectWithGoogle: () => Promise<Wallet | null>;
+  connectWithPasskey: () => Promise<Wallet | null>;
   disconnect: () => void;
   wallet: Wallet | undefined
 }
@@ -19,17 +19,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const wallet = useActiveWallet(); 
   const { disconnect: disconnectWallet } = useDisconnect(); 
 
-  const { connectWithGoogle: rawConnectWithGoogle } = useGoogleSmartAccount();
-  const { connectWithPasskey: rawConnectWithPasskey } = usePasskeySmartAccount();
+  const { connectWithGoogle } = useGoogleSmartAccount();
+  const { connectWithPasskey } = usePasskeySmartAccount();
   const [isConnected, setIsConnected] = useState(false);
 
-  const connectWithGoogle = async () => {
-    await rawConnectWithGoogle();
-  };
-
-  const connectWithPasskey = async () => {
-    await rawConnectWithPasskey();
-  };
+ 
 
   useEffect(() => {
     setIsConnected(!!account?.address);
