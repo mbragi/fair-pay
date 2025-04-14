@@ -1,55 +1,56 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import ConnectModal from "../modal/connectModal";
+import { useEffect, useState } from "react";
+import ConnectModal from "../modals/connectModal";
+import { useAuth } from "../../context/AuthContext";
 
 const Header = () => {
-  const [showModal, setShowModal] = useState(false);
+  const { isConnected, address, disconnect } = useAuth();
+  const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (address) {
+      setModalOpen(false)
+    }
+  }, [address])
+
+  const getShortAddress = (addr: string) => {
+    if (!addr) return "";
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  };
 
   return (
-    <header className="bg-white shadow-md">
-      <nav className="flex items-center justify-between py-6 px-4 sm:px-6 lg:px-8 border-b">
-        {/* Logo */}
-        <div className="flex items-center">
-          <Link to="/" className="text-2xl font-bold text-blue-900">
-            Fair<span className="text-blue-600">Pay</span>
-          </Link>
-        </div>
-
-        {/* Navigation Links */}
-        <div className="hidden md:flex items-center space-x-8">
-          <a
-            href="#features"
-            className="text-gray-600 hover:text-blue-600 font-medium"
-          >
-            Features
-          </a>
-          <Link
-            to="/howitworks"
-            className="text-gray-600 hover:text-blue-600 font-medium"
-          >
-            How it Works
-          </Link>
-          <a
-            href="#testimonials"
-            className="text-gray-600 hover:text-blue-600 font-medium"
-          >
-            Testimonials
-          </a>
-        </div>
-
-        {/* Get Started Button */}
-        <div className="flex items-center space-x-4">
+    <header className="shadow-md border-b py-4 px-6 flex justify-between items-center">
+      <Link to="/" className="text-2xl font-bold text-blue-700">
+        Fair<span className="text-indigo-600">Pay</span>
+      </Link>
+      <nav className="space-x-6 hidden md:flex">
+        <a href="#features" className="hover:text-blue-600">Features</a>
+        <Link to="/howitworks" className="hover:text-blue-600">How it Works</Link>
+        <a href="#testimonials" className="hover:text-blue-600">Testimonials</a>
+      </nav>
+      <div className="flex items-center">
+        {isConnected || address ? (
+          <div className="flex items-center space-x-2">
+            <span className="text-gray-700 font-mono text-sm">
+              {getShortAddress(address ?? '')}
+            </span>
+            <button
+              onClick={disconnect}
+              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+            >
+              Logout
+            </button>
+          </div>
+        ) : (
           <button
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow hover:bg-blue-700 transition"
-            onClick={() => setShowModal(true)}
+            onClick={() => setModalOpen(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
             Get Started
           </button>
-        </div>
-      </nav>
-
-      {/* Connect Modal */}
-      <ConnectModal open={showModal} onClose={() => setShowModal(false)} />
+        )}
+      </div>
+      <ConnectModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </header>
   );
 };

@@ -3,11 +3,8 @@ import HowItWorksSection from "./components/landing-page-component/howitworks-se
 import "@rainbow-me/rainbowkit/styles.css";
 import ClientPage from "./page/client-page/client-page";
 import ServiceProviderDashboard from "./page/employees-page/ServiceProviderDashboard";
-
-
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-
+import { ThirdwebProvider } from "thirdweb/react"
+import { AuthProvider } from "./context/AuthContext";
 
 import {
   RouterProvider,
@@ -21,23 +18,22 @@ function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(
       <Route path="/" element={<Root />}>
-         <Route index element={<LandingPage />} />
-          <Route path="/howitworks" element={<HowItWorksSection/>}/>
-          <Route path="/clientpage" element={<ClientPage/>}/>
-          <Route path="/providerspage" element={<ServiceProviderDashboard/>}/>
+        <Route index element={<LandingPage />} />
+        <Route path="/howitworks" element={<HowItWorksSection />} />
+        <Route path="/clientpage" element={<ClientPage />} />
+        <Route path="/providerspage" element={<ServiceProviderDashboard />} />
       </Route>
     )
   )
 
-  const queryClient = new QueryClient();
 
   return (
-    // <WagmiProvider config={config}>    <ThirdwebProvider>
 
-      <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
-      </QueryClientProvider>
-    // </WagmiProvider>
+    <ThirdwebProvider >
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </ThirdwebProvider>
   );
 }
 
