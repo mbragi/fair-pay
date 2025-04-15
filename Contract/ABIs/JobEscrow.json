@@ -1,9 +1,8 @@
 {
   "abi": [
-    { "type": "receive", "stateMutability": "payable" },
     {
       "type": "function",
-      "name": "DISPUTE_RESOLUTION_PERIOD",
+      "name": "DISPUTE_PERIOD",
       "inputs": [],
       "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
       "stateMutability": "view"
@@ -12,33 +11,7 @@
       "type": "function",
       "name": "approveMilestone",
       "inputs": [
-        {
-          "name": "_milestoneIndex",
-          "type": "uint256",
-          "internalType": "uint256"
-        }
-      ],
-      "outputs": [],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
-      "name": "assignWorker",
-      "inputs": [
-        { "name": "_worker", "type": "address", "internalType": "address" }
-      ],
-      "outputs": [],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
-      "name": "autoResolveDispute",
-      "inputs": [
-        {
-          "name": "_milestoneIndex",
-          "type": "uint256",
-          "internalType": "uint256"
-        }
+        { "name": "_index", "type": "uint256", "internalType": "uint256" }
       ],
       "outputs": [],
       "stateMutability": "nonpayable"
@@ -94,13 +67,6 @@
     },
     {
       "type": "function",
-      "name": "emergencyWithdraw",
-      "inputs": [],
-      "outputs": [],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
       "name": "employer",
       "inputs": [],
       "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
@@ -108,47 +74,53 @@
     },
     {
       "type": "function",
-      "name": "getAllMilestones",
+      "name": "getJobDetails",
       "inputs": [],
       "outputs": [
-        { "name": "titles", "type": "string[]", "internalType": "string[]" },
-        {
-          "name": "descriptions",
-          "type": "string[]",
-          "internalType": "string[]"
-        },
-        { "name": "amounts", "type": "uint256[]", "internalType": "uint256[]" },
-        {
-          "name": "deadlines",
-          "type": "uint256[]",
-          "internalType": "uint256[]"
-        },
-        { "name": "statuses", "type": "uint8[]", "internalType": "uint8[]" }
+        { "name": "", "type": "address", "internalType": "address" },
+        { "name": "", "type": "address", "internalType": "address" },
+        { "name": "", "type": "string", "internalType": "string" },
+        { "name": "", "type": "string", "internalType": "string" },
+        { "name": "", "type": "uint256", "internalType": "uint256" },
+        { "name": "", "type": "uint8", "internalType": "uint8" },
+        { "name": "", "type": "uint256", "internalType": "uint256" },
+        { "name": "", "type": "uint256", "internalType": "uint256" }
       ],
       "stateMutability": "view"
     },
     {
       "type": "function",
-      "name": "getJobDetails",
-      "inputs": [],
+      "name": "getMilestone",
+      "inputs": [
+        { "name": "index", "type": "uint256", "internalType": "uint256" }
+      ],
       "outputs": [
-        { "name": "_employer", "type": "address", "internalType": "address" },
-        { "name": "_worker", "type": "address", "internalType": "address" },
         { "name": "_title", "type": "string", "internalType": "string" },
         { "name": "_description", "type": "string", "internalType": "string" },
+        { "name": "amount", "type": "uint256", "internalType": "uint256" },
+        { "name": "deadline", "type": "uint256", "internalType": "uint256" },
+        { "name": "_status", "type": "uint8", "internalType": "uint8" }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getPaymentInfo",
+      "inputs": [],
+      "outputs": [
         {
           "name": "_totalPayment",
           "type": "uint256",
           "internalType": "uint256"
         },
-        { "name": "_status", "type": "uint8", "internalType": "uint8" },
+        { "name": "paidAmount", "type": "uint256", "internalType": "uint256" },
         {
-          "name": "_milestoneCount",
+          "name": "remainingAmount",
           "type": "uint256",
           "internalType": "uint256"
         },
         {
-          "name": "_currentMilestone",
+          "name": "platformFeeAmount",
           "type": "uint256",
           "internalType": "uint256"
         }
@@ -224,29 +196,12 @@
     },
     {
       "type": "function",
-      "name": "raiseDispute",
-      "inputs": [
-        {
-          "name": "_milestoneIndex",
-          "type": "uint256",
-          "internalType": "uint256"
-        }
-      ],
-      "outputs": [],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
       "name": "resolveDispute",
       "inputs": [
-        {
-          "name": "_milestoneIndex",
-          "type": "uint256",
-          "internalType": "uint256"
-        },
+        { "name": "_index", "type": "uint256", "internalType": "uint256" },
         { "name": "_workerFavored", "type": "bool", "internalType": "bool" },
         {
-          "name": "_employerRefundAmount",
+          "name": "_employerRefund",
           "type": "uint256",
           "internalType": "uint256"
         }
@@ -265,7 +220,7 @@
         },
         { "name": "_titles", "type": "string[]", "internalType": "string[]" },
         {
-          "name": "_descriptions",
+          "name": "_description",
           "type": "string[]",
           "internalType": "string[]"
         },
@@ -295,19 +250,6 @@
         }
       ],
       "stateMutability": "view"
-    },
-    {
-      "type": "function",
-      "name": "submitMilestone",
-      "inputs": [
-        {
-          "name": "_milestoneIndex",
-          "type": "uint256",
-          "internalType": "uint256"
-        }
-      ],
-      "outputs": [],
-      "stateMutability": "nonpayable"
     },
     {
       "type": "function",
@@ -346,12 +288,12 @@
     },
     {
       "type": "event",
-      "name": "DisputeRaised",
+      "name": "DisputeRaise",
       "inputs": [
         {
-          "name": "milestoneIndex",
+          "name": "index",
           "type": "uint256",
-          "indexed": true,
+          "indexed": false,
           "internalType": "uint256"
         }
       ],
@@ -359,12 +301,12 @@
     },
     {
       "type": "event",
-      "name": "DisputeResolved",
+      "name": "DisputeResolve",
       "inputs": [
         {
-          "name": "milestoneIndex",
+          "name": "index",
           "type": "uint256",
-          "indexed": true,
+          "indexed": false,
           "internalType": "uint256"
         },
         {
@@ -380,6 +322,12 @@
       "type": "event",
       "name": "FundsDeposited",
       "inputs": [
+        {
+          "name": "depositor",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
         {
           "name": "amount",
           "type": "uint256",
@@ -402,26 +350,21 @@
       ],
       "anonymous": false
     },
+    { "type": "event", "name": "JobCancel", "inputs": [], "anonymous": false },
     {
       "type": "event",
-      "name": "JobCancelled",
+      "name": "JobComplete",
       "inputs": [],
       "anonymous": false
     },
     {
       "type": "event",
-      "name": "JobCompleted",
-      "inputs": [],
-      "anonymous": false
-    },
-    {
-      "type": "event",
-      "name": "JobStarted",
+      "name": "JobStart",
       "inputs": [
         {
           "name": "worker",
           "type": "address",
-          "indexed": true,
+          "indexed": false,
           "internalType": "address"
         }
       ],
@@ -429,12 +372,12 @@
     },
     {
       "type": "event",
-      "name": "MilestoneAdded",
+      "name": "MilestoneAdd",
       "inputs": [
         {
           "name": "index",
           "type": "uint256",
-          "indexed": true,
+          "indexed": false,
           "internalType": "uint256"
         },
         {
@@ -461,24 +404,18 @@
           "type": "uint256",
           "indexed": true,
           "internalType": "uint256"
-        },
-        {
-          "name": "amount",
-          "type": "uint256",
-          "indexed": false,
-          "internalType": "uint256"
         }
       ],
       "anonymous": false
     },
     {
       "type": "event",
-      "name": "MilestoneUpdated",
+      "name": "MilestoneUpdate",
       "inputs": [
         {
           "name": "index",
           "type": "uint256",
-          "indexed": true,
+          "indexed": false,
           "internalType": "uint256"
         },
         {
@@ -492,10 +429,66 @@
     },
     {
       "type": "event",
-      "name": "PaymentReleased",
+      "name": "MilestonesSet",
+      "inputs": [
+        {
+          "name": "indices",
+          "type": "uint256[]",
+          "indexed": false,
+          "internalType": "uint256[]"
+        },
+        {
+          "name": "titles",
+          "type": "string[]",
+          "indexed": false,
+          "internalType": "string[]"
+        },
+        {
+          "name": "amounts",
+          "type": "uint256[]",
+          "indexed": false,
+          "internalType": "uint256[]"
+        },
+        {
+          "name": "deadlines",
+          "type": "uint256[]",
+          "indexed": false,
+          "internalType": "uint256[]"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Payment",
       "inputs": [
         {
           "name": "worker",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "PaymentReleased",
+      "inputs": [
+        {
+          "name": "milestoneIndex",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "recipient",
           "type": "address",
           "indexed": true,
           "internalType": "address"
@@ -509,8 +502,23 @@
       ],
       "anonymous": false
     },
+    { "type": "error", "name": "AlreadyConfirmed", "inputs": [] },
+    { "type": "error", "name": "AmountMismatch", "inputs": [] },
+    { "type": "error", "name": "DisputePeriodActive", "inputs": [] },
+    { "type": "error", "name": "InsufficientFunds", "inputs": [] },
+    { "type": "error", "name": "InvalidAddress", "inputs": [] },
+    { "type": "error", "name": "InvalidAmount", "inputs": [] },
+    { "type": "error", "name": "InvalidArrayLength", "inputs": [] },
     { "type": "error", "name": "InvalidInitialization", "inputs": [] },
+    { "type": "error", "name": "InvalidMilestone", "inputs": [] },
+    { "type": "error", "name": "InvalidRefund", "inputs": [] },
+    { "type": "error", "name": "JobNotActive", "inputs": [] },
+    { "type": "error", "name": "JobStarted", "inputs": [] },
+    { "type": "error", "name": "NotDisputed", "inputs": [] },
     { "type": "error", "name": "NotInitializing", "inputs": [] },
+    { "type": "error", "name": "OnlyEmployer", "inputs": [] },
+    { "type": "error", "name": "OnlyPlatform", "inputs": [] },
+    { "type": "error", "name": "OnlyWorker", "inputs": [] },
     { "type": "error", "name": "ReentrancyGuardReentrantCall", "inputs": [] },
     {
       "type": "error",
@@ -518,6 +526,7 @@
       "inputs": [
         { "name": "token", "type": "address", "internalType": "address" }
       ]
-    }
+    },
+    { "type": "error", "name": "TooEarly", "inputs": [] }
   ]
 }
