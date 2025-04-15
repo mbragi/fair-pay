@@ -2,15 +2,16 @@
 pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./JobEscrow.sol";
 
-contract JobEscrowFactory {
+contract JobEscrowFactory is Ownable {
     address public immutable implementation;
     address public coreContract;
     
     event CloneCreated(address indexed clone);
     
-    constructor(address _implementation) {
+    constructor(address _implementation) Ownable(msg.sender) {
         implementation = _implementation;
     }
     
@@ -19,8 +20,7 @@ contract JobEscrowFactory {
         _;
     }
     
-    function setCoreContract(address _coreContract) external {
-        require(coreContract == address(0), "Core contract already set");
+    function setCoreContract(address _coreContract) external onlyOwner {
         require(_coreContract != address(0), "Invalid core contract address");
         coreContract = _coreContract;
     }
@@ -38,7 +38,7 @@ contract JobEscrowFactory {
         address clone = Clones.clone(implementation);
         
         JobEscrow(payable(clone)).initialize(
-            coreContract, // platform address
+            coreContract,
             _employer,
             _orgId,
             _title,

@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./JobFactory.sol";
 import "./FeesManager.sol";
 import "./OrganizationManager.sol";
+import "./interfaces/IFairPay.sol";
 
 contract FairPayCore is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -155,22 +156,36 @@ contract FairPayCore is Ownable, ReentrancyGuard {
             IERC20(_token).safeTransfer(owner(), balance);
         }
     }
+
+    function getJobPaymentInfo(address _jobAddress) external view returns (
+        address token,
+        uint256 totalPayment,
+        uint256 paidAmount,
+        uint256 remainingAmount
+    ) {
+        require(validJobContracts[_jobAddress], "Invalid job contract");
+        
+        IJobEscrow job = IJobEscrow(_jobAddress);
+        (, , , , uint256 payment, , uint256 milestoneCount, ) = job.getJobDetails();
+        
+        // Calculate paid amount
+        uint256 paid;
+        for (uint256 i = 0; i < milestoneCount; i++) {
+            (, , uint256 amount, , uint8 status) = job.getMilestone(i);
+            if (status == uint8(IJobEscrow.MilestoneStatus.Completed)) {
+                paid += amount;
+            }
+        }
+        
+        return (
+            job.token(),
+            payment,
+            paid,
+            payment - paid
+        );
+    }
     
     receive() external payable {}
     fallback() external payable {}
 }
 
-// Interface for JobEscrow to call getJobDetails
-interface IJobEscrow {
-    function getJobDetails() external view returns (
-        address _employer,
-        address _worker,
-        string memory _title,
-        string memory _description,
-        uint256 _totalPayment,
-        uint8 _status,
-        uint256 _milestoneCount,
-        uint256 _currentMilestone
-    );
-    function workerConfirmed() external view returns (bool);
-}

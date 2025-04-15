@@ -2,13 +2,10 @@
 pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-
-interface IFairPayCore {
-    function registerWorkerJob(address _worker) external;
-}
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./interfaces/IFairPay.sol";
 
 contract JobEscrow is ReentrancyGuard, Initializable {
     using SafeERC20 for IERC20;
@@ -16,48 +13,64 @@ contract JobEscrow is ReentrancyGuard, Initializable {
     enum JobStatus { Created, InProgress, Completed, Cancelled }
     enum MilestoneStatus { NotStarted, InProgress, Completed, Disputed }
     
-    struct Milestone {
-        string title;
-        string description;
-        uint256 amount;
-        uint256 deadline; 
-        MilestoneStatus status;
-    }
+    error OnlyEmployer();
+    error OnlyWorker();
+    error OnlyPlatform();
+    error JobNotActive();
+    error InvalidAddress();
+    error InvalidMilestone();
+    error InsufficientFunds();
+    error TooEarly();
+    error NotDisputed();
+    error DisputePeriodActive();
+    error AlreadyConfirmed();
+    error JobStarted();
+    error InvalidArrayLength();
+    error AmountMismatch();
+    error InvalidRefund();
+    error InvalidAmount();
+
     
-    // Job information
     address public platform;
     address public employer;
+    JobStatus public status;
     uint256 public organizationId;
+    
     string public title;
     string public description;
     uint256 public totalPayment;
-    JobStatus public status;
-    address public token; 
-    uint256 public platformFee; 
+    address public token;
+    uint256 public platformFee;
     uint256 public createdAt;
-    
     address public worker;
     bool public workerConfirmed;
-    
-    Milestone[] public milestones;
     uint256 public currentMilestoneIndex;
     
+    struct Milestone {
+        string title;
+        string description;
+        uint256 amount;     
+        uint256 deadline;
+        MilestoneStatus status;
+    }
     
-    uint256 public constant DISPUTE_RESOLUTION_PERIOD = 7 days;
+    Milestone[] public milestones;
+    uint256 public constant DISPUTE_PERIOD = 7 days;
     mapping(uint256 => uint256) public disputeTimestamps;
     
-    event JobStarted(address indexed worker);
-    event MilestoneAdded(uint256 indexed index, string title, uint256 amount);
-    event MilestoneUpdated(uint256 indexed index, MilestoneStatus status);
-    event MilestoneCompleted(uint256 indexed index, uint256 amount);
-    event FundsDeposited(uint256 amount);
-    event PaymentReleased(address indexed worker, uint256 amount);
-    event JobCompleted();
-    event JobCancelled();
-    event DisputeRaised(uint256 indexed milestoneIndex);
-    event DisputeResolved(uint256 indexed milestoneIndex, bool workerFavored);
-    
-    
+    event FundsDeposited(address indexed depositor, uint256 amount);
+    event MilestoneCompleted(uint256 indexed index);
+    event PaymentReleased(uint256 indexed milestoneIndex, address indexed recipient, uint256 amount);
+    event JobStart(address worker);
+    event MilestonesSet(uint256[] indices, string[] titles, uint256[] amounts, uint256[] deadlines);
+    event MilestoneAdd(uint256 index, string title, uint256 amount);
+    event MilestoneUpdate(uint256 index, MilestoneStatus status);
+    event Payment(address worker, uint256 amount);
+    event JobComplete();
+    event JobCancel();
+    event DisputeRaise(uint256 index);
+    event DisputeResolve(uint256 index, bool workerFavored);
+
     function initialize(
         address _platform,
         address _employer,
@@ -69,6 +82,8 @@ contract JobEscrow is ReentrancyGuard, Initializable {
         address _token,
         uint256 _platformFee
     ) external initializer {
+        if (_platform == address(0) || _employer == address(0)) revert InvalidAddress();
+        
         platform = _platform;
         employer = _employer;
         organizationId = _organizationId;
@@ -81,341 +96,174 @@ contract JobEscrow is ReentrancyGuard, Initializable {
         createdAt = block.timestamp;
         
         for (uint256 i = 0; i < _milestoneCount; i++) {
-            milestones.push(Milestone({
-                title: "",
-                description: "",
-                amount: 0,
-                deadline: 0,
-                status: MilestoneStatus.NotStarted
-            }));
+            milestones.push(Milestone("", "", 0, 0, MilestoneStatus.NotStarted));
         }
     }
     
     modifier onlyEmployer() {
-        require(msg.sender == employer, "Only employer can call this");
+        if (msg.sender != employer) revert OnlyEmployer();
         _;
     }
     
     modifier onlyWorker() {
-        require(msg.sender == worker && workerConfirmed, "Only confirmed worker can call this");
-        _;
-    }
-    
-    modifier onlyPlatform() {
-        require(msg.sender == platform, "Only platform can call this");
+        if (!(msg.sender == worker && workerConfirmed)) revert OnlyWorker();
         _;
     }
     
     modifier jobActive() {
-        require(status == JobStatus.InProgress, "Job is not active");
+        if (status != JobStatus.InProgress) revert JobNotActive();
         _;
     }
 
-    modifier validAddress(address _addr) {
-        require(_addr != address(0), "Invalid address");
-        _;
-    }
-
-    modifier validMilestoneIndex(uint256 _index) {
-        require(_index < milestones.length, "Invalid milestone index");
-        _;
-    }
-    
     function depositFunds() external payable {
-        require(status == JobStatus.Created || status == JobStatus.InProgress, "Cannot deposit funds now");
+        if (status > JobStatus.InProgress) revert JobNotActive();
         
         if (token == address(0)) {
-            require(msg.value == totalPayment, "Incorrect payment amount");
+            if (msg.value != totalPayment) revert InsufficientFunds();
         } else {
-            require(msg.value == 0, "ETH not accepted for this job");
+            if (msg.value != 0) revert InvalidAddress();
             IERC20(token).safeTransferFrom(msg.sender, address(this), totalPayment);
         }
-        
-        emit FundsDeposited(totalPayment);
+        emit FundsDeposited(msg.sender, msg.value);
     }
-    
     
     function setMilestones(
         uint256[] calldata _indices,
         string[] calldata _titles,
-        string[] calldata _descriptions,
+        string[] calldata _description,
         uint256[] calldata _amounts,
         uint256[] calldata _deadlines
     ) external onlyEmployer {
-        require(status == JobStatus.Created, "Can only set milestones before job starts");
-        require(!workerConfirmed, "Worker already confirmed job");
-        require(
-            _indices.length == _titles.length &&
-            _indices.length == _descriptions.length &&
-            _indices.length == _amounts.length &&
-            _indices.length == _deadlines.length,
-            "Input arrays must have same length"
-        );
+        if (status != JobStatus.Created) revert JobStarted();
+        if (workerConfirmed) revert AlreadyConfirmed();
+        if (_indices.length != _titles.length || 
+            _indices.length != _amounts.length || 
+            _indices.length != _deadlines.length) revert InvalidArrayLength();
         
-        uint256 totalAmount = 0;
-        
+        uint256 totalAmount;
         for (uint256 i = 0; i < _indices.length; i++) {
-            uint256 index = _indices[i];
-            require(index < milestones.length, "Milestone index out of bounds");
-            require(_amounts[i] > 0, "Milestone amount must be > 0");
+            if (_indices[i] >= milestones.length) revert InvalidMilestone();
+            if (_amounts[i] == 0) revert InvalidAmount();
             
-            milestones[index] = Milestone({
-                title: _titles[i],
-                description: _descriptions[i],
-                amount: _amounts[i],
-                deadline: _deadlines[i],
-                status: MilestoneStatus.NotStarted
-            });
-            
+            milestones[_indices[i]] = Milestone(
+                _titles[i],
+                _description[i],
+                _amounts[i],
+                _deadlines[i],
+                MilestoneStatus.NotStarted
+            );
             totalAmount += _amounts[i];
-            emit MilestoneAdded(index, _titles[i], _amounts[i]);
         }
         
-        require(totalAmount == totalPayment, "Total milestone amounts must equal total payment");
-    }
-    
-    function assignWorker(address _worker) 
-        external 
-        onlyEmployer 
-        validAddress(_worker)
-    {
-        require(status == JobStatus.Created, "Job already started");
-        require(_worker != employer, "Worker cannot be employer");
+        if (totalAmount != totalPayment) revert AmountMismatch();
         
-        worker = _worker;
+        emit MilestonesSet(_indices, _titles, _amounts, _deadlines);
     }
     
     function confirmJob() external {
-        require(msg.sender == worker, "Only assigned worker can confirm");
-        require(!workerConfirmed, "Already confirmed");
-        require(status == JobStatus.Created, "Job not in created state");
+        if (msg.sender != worker) revert OnlyWorker();
+        if (workerConfirmed) revert AlreadyConfirmed();
+        if (status != JobStatus.Created) revert JobStarted();
         
-        // Check if all milestones are properly set
-        uint256 totalAmount = 0;
+        // Verify all milestones are properly set
         for (uint256 i = 0; i < milestones.length; i++) {
-            require(bytes(milestones[i].title).length > 0, "Milestone details incomplete");
-            totalAmount += milestones[i].amount;
+            if (bytes(milestones[i].title).length == 0 || milestones[i].amount == 0) {
+                revert InvalidMilestone();
+            }
         }
-        require(totalAmount == totalPayment, "Total milestone amounts must equal total payment");
         
-        // Check if funds are in escrow
+        // Verify funding
         if (token == address(0)) {
-            require(address(this).balance >= totalPayment, "Insufficient funds in escrow");
+            if (address(this).balance < totalPayment) revert InsufficientFunds();
         } else {
-            require(
-                IERC20(token).balanceOf(address(this)) >= totalPayment,
-                "Insufficient tokens in escrow"
-            );
+            if (IERC20(token).balanceOf(address(this)) < totalPayment) revert InsufficientFunds();
         }
         
         workerConfirmed = true;
         status = JobStatus.InProgress;
         milestones[0].status = MilestoneStatus.InProgress;
-        
         IFairPayCore(platform).registerWorkerJob(worker);
-        emit JobStarted(worker);
+        emit JobStart(worker);
     }
     
-    
-    function submitMilestone(uint256 _milestoneIndex) external onlyWorker jobActive {
-        require(_milestoneIndex == currentMilestoneIndex, "Can only submit current milestone");
-        require(milestones[_milestoneIndex].status == MilestoneStatus.InProgress, "Milestone not in progress");
+    function approveMilestone(uint256 _index) external onlyEmployer jobActive nonReentrant {
+        if (_index >= milestones.length) revert InvalidMilestone();
+        if (milestones[_index].status != MilestoneStatus.Completed) revert InvalidMilestone();
         
-        milestones[_milestoneIndex].status = MilestoneStatus.Completed;
+        uint256 amount = milestones[_index].amount;
+        uint256 fee = amount * platformFee / 10000;
         
-        emit MilestoneUpdated(_milestoneIndex, MilestoneStatus.Completed);
-    }
-    
-    function approveMilestone(uint256 _milestoneIndex) 
-        external 
-        onlyEmployer 
-        jobActive 
-        validMilestoneIndex(_milestoneIndex)
-        nonReentrant
-    {
-        Milestone storage milestone = milestones[_milestoneIndex];
-        require(milestone.status == MilestoneStatus.Completed, "Milestone not completed");
-
-        uint256 paymentAmount = milestone.amount;
-        uint256 fee = (paymentAmount * platformFee) / 10000;
-        uint256 workerPayment = paymentAmount - fee;
+        IERC20(token).safeTransfer(worker, amount - fee);
+        IERC20(token).safeTransfer(platform, fee);
         
-        _safeTransfer(payable(worker), workerPayment);
-        _safeTransfer(payable(platform), fee);
+        emit Payment(worker, amount - fee);
         
-        emit PaymentReleased(worker, workerPayment);
-        emit MilestoneCompleted(_milestoneIndex, paymentAmount);
-        
-        // Move to next milestone or complete job
-        currentMilestoneIndex++;
-        if (currentMilestoneIndex < milestones.length) {
-            milestones[currentMilestoneIndex].status = MilestoneStatus.InProgress;
-        } else {
+        if (++currentMilestoneIndex >= milestones.length) {
             status = JobStatus.Completed;
-            emit JobCompleted();
+            emit JobComplete();
+        } else {
+            milestones[currentMilestoneIndex].status = MilestoneStatus.InProgress;
+            emit MilestoneUpdate(currentMilestoneIndex, MilestoneStatus.InProgress);
         }
+        emit MilestoneCompleted(_index);
+        emit PaymentReleased(_index, worker, amount - fee);
     }
 
-   
-    function _safeTransfer(address payable _to, uint256 _amount) private {
-        if (token == address(0)) {
-            (bool success, ) = _to.call{value: _amount}("");
-            require(success, "Transfer failed");
-        } else {
-            IERC20(token).safeTransfer(_to, _amount);
-        }
-    }
-    
-    function raiseDispute(uint256 _milestoneIndex) external onlyEmployer jobActive {
-        require(milestones[_milestoneIndex].status == MilestoneStatus.Completed, "Can only dispute completed milestones");
-        
-        milestones[_milestoneIndex].status = MilestoneStatus.Disputed;
-        disputeTimestamps[_milestoneIndex] = block.timestamp;
-        
-        emit DisputeRaised(_milestoneIndex);
-    }
-    
-    
     function resolveDispute(
-        uint256 _milestoneIndex, 
+        uint256 _index, 
         bool _workerFavored,
-        uint256 _employerRefundAmount
-    ) external onlyPlatform nonReentrant {
-        require(milestones[_milestoneIndex].status == MilestoneStatus.Disputed, "Milestone not disputed");
+        uint256 _employerRefund
+    ) external nonReentrant {
+        if (msg.sender != platform) revert OnlyPlatform();
+        if (milestones[_index].status != MilestoneStatus.Disputed) revert NotDisputed();
         
+        uint256 amount = milestones[_index].amount;
         if (_workerFavored) {
-            // Worker's claim upheld - continue with payment
-            uint256 paymentAmount = milestones[_milestoneIndex].amount;
-            uint256 fee = (paymentAmount * platformFee) / 10000;
-            uint256 workerPayment = paymentAmount - fee;
-            
-            _safeTransfer(payable(worker), workerPayment);
-            _safeTransfer(payable(platform), fee);
-            
-            emit PaymentReleased(worker, workerPayment);
+            uint256 fee = amount * platformFee / 10000;
+            IERC20(token).safeTransfer(worker, amount - fee);
+            IERC20(token).safeTransfer(platform, fee);
+            emit Payment(worker, amount - fee);
         } else {
-            // Employer's claim upheld - partial refund
-            require(_employerRefundAmount <= milestones[_milestoneIndex].amount, "Refund exceeds milestone amount");
+            if (_employerRefund > amount) revert InvalidRefund();
+            if (_employerRefund > 0) IERC20(token).safeTransfer(employer, _employerRefund);
             
-            if (_employerRefundAmount > 0) {
-                _safeTransfer(payable(employer), _employerRefundAmount);
-            }
-            
-            // Remaining amount goes to worker
-            uint256 remainingAmount = milestones[_milestoneIndex].amount - _employerRefundAmount;
-            if (remainingAmount > 0) {
-                uint256 fee = (remainingAmount * platformFee) / 10000;
-                uint256 workerPayment = remainingAmount - fee;
-                
-                _safeTransfer(payable(worker), workerPayment);
-                _safeTransfer(payable(platform), fee);
-                
-                emit PaymentReleased(worker, workerPayment);
+            uint256 remaining = amount - _employerRefund;
+            if (remaining > 0) {
+                uint256 fee = remaining * platformFee / 10000;
+                IERC20(token).safeTransfer(worker, remaining - fee);
+                IERC20(token).safeTransfer(platform, fee);
+                emit Payment(worker, remaining - fee);
             }
         }
         
-        emit DisputeResolved(_milestoneIndex, _workerFavored);
-        
-        // Move to next milestone or complete job
-        currentMilestoneIndex++;
-        if (currentMilestoneIndex < milestones.length) {
-            milestones[currentMilestoneIndex].status = MilestoneStatus.InProgress;
-        } else {
+        if (++currentMilestoneIndex >= milestones.length) {
             status = JobStatus.Completed;
-            emit JobCompleted();
-        }
-    }
-    
-    /**
-     * @dev Auto-resolve disputes after timeout period (can be called by worker)
-     */
-    function autoResolveDispute(uint256 _milestoneIndex) external onlyWorker nonReentrant {
-        require(milestones[_milestoneIndex].status == MilestoneStatus.Disputed, "Milestone not disputed");
-        require(
-            block.timestamp > disputeTimestamps[_milestoneIndex] + DISPUTE_RESOLUTION_PERIOD,
-            "Dispute resolution period not over"
-        );
-        
-        // Auto-resolve in worker's favor after timeout
-        uint256 paymentAmount = milestones[_milestoneIndex].amount;
-        uint256 fee = (paymentAmount * platformFee) / 10000;
-        uint256 workerPayment = paymentAmount - fee;
-        
-        _safeTransfer(payable(worker), workerPayment);
-        _safeTransfer(payable(platform), fee);
-        
-        emit PaymentReleased(worker, workerPayment);
-        emit DisputeResolved(_milestoneIndex, true);
-        
-        // Move to next milestone or complete job
-        currentMilestoneIndex++;
-        if (currentMilestoneIndex < milestones.length) {
-            milestones[currentMilestoneIndex].status = MilestoneStatus.InProgress;
+            emit JobComplete();
         } else {
-            status = JobStatus.Completed;
-            emit JobCompleted();
+            milestones[currentMilestoneIndex].status = MilestoneStatus.InProgress;
         }
+        
+        emit DisputeResolve(_index, _workerFavored);
     }
-    
-    /**
-     * @dev Cancel a job (only possible before worker confirms)
-     */
+
     function cancelJob() external onlyEmployer nonReentrant {
-        require(status == JobStatus.Created, "Can only cancel before job starts");
-        require(!workerConfirmed, "Worker already confirmed job");
+        if (status != JobStatus.Created) revert JobStarted();
+        if (workerConfirmed) revert AlreadyConfirmed();
         
         status = JobStatus.Cancelled;
+        uint256 balance = token == address(0) 
+            ? address(this).balance 
+            : IERC20(token).balanceOf(address(this));
         
-        // Return funds to employer
-        if (token == address(0)) {
-            if (address(this).balance > 0) {
-                (bool success, ) = employer.call{value: address(this).balance}("");
-                require(success, "ETH return failed");
-            }
-        } else {
-            uint256 tokenBalance = IERC20(token).balanceOf(address(this));
-            if (tokenBalance > 0) {
-                IERC20(token).safeTransfer(employer, tokenBalance);
-            }
+        if (balance > 0) {
+            IERC20(token).safeTransfer(employer, balance);
         }
-        
-        emit JobCancelled();
+        emit JobCancel();
     }
 
-    function getAllMilestones() external view returns (
-        string[] memory titles,
-        string[] memory descriptions,
-        uint256[] memory amounts,
-        uint256[] memory deadlines,
-        uint8[] memory statuses
-    ) {
-        uint256 length = milestones.length;
-        titles = new string[](length);
-        descriptions = new string[](length);
-        amounts = new uint256[](length);
-        deadlines = new uint256[](length);
-        statuses = new uint8[](length);
-        
-        for (uint256 i = 0; i < length; i++) {
-            titles[i] = milestones[i].title;
-            descriptions[i] = milestones[i].description;
-            amounts[i] = milestones[i].amount;
-            deadlines[i] = milestones[i].deadline;
-            statuses[i] = uint8(milestones[i].status);
-        }
-        
-        return (titles, descriptions, amounts, deadlines, statuses);
-    }
-    
     function getJobDetails() external view returns (
-        address _employer,
-        address _worker,
-        string memory _title,
-        string memory _description,
-        uint256 _totalPayment,
-        uint8 _status,
-        uint256 _milestoneCount,
-        uint256 _currentMilestone
+        address, address, string memory, string memory, 
+        uint256, uint8, uint256, uint256
     ) {
         return (
             employer,
@@ -429,15 +277,37 @@ contract JobEscrow is ReentrancyGuard, Initializable {
         );
     }
 
-    function emergencyWithdraw() external onlyEmployer nonReentrant {
-        require(status == JobStatus.Created, "Job already started");
-        require(!workerConfirmed, "Worker already confirmed");
-        require(block.timestamp > createdAt + 30 days, "Too early for emergency withdraw");
-        
-        _safeTransfer(payable(employer), token == address(0) ? address(this).balance : IERC20(token).balanceOf(address(this)));
-        status = JobStatus.Cancelled;
-        emit JobCancelled();
+    function getMilestone(uint256 index) external view returns (
+        string memory _title,
+        string memory _description,
+        uint256 amount,
+        uint256 deadline,
+        uint8 _status
+    ) {
+        require(index < milestones.length, "Invalid milestone index");
+        Milestone memory m = milestones[index];
+        return (m.title, m.description, m.amount, m.deadline, uint8(m.status));
     }
-    
-    receive() external payable {}
+
+    function getPaymentInfo() external view returns (
+        uint256 _totalPayment,
+        uint256 paidAmount,
+        uint256 remainingAmount,
+        uint256 platformFeeAmount
+    ) {
+        uint256 paid;
+        for (uint256 i = 0; i < milestones.length; i++) {
+            if (milestones[i].status == MilestoneStatus.Completed) {
+                paid += milestones[i].amount;
+            }
+        }
+        
+        uint256 fee = platformFee;
+        return (
+            totalPayment,
+            paid,
+            totalPayment - paid,
+            fee
+        );
+    }
 }

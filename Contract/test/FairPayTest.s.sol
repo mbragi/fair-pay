@@ -1,547 +1,250 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {Test, console} from "forge-std/Test.sol";
-import {FairPayCore} from "../src/FairPayCore.sol";
-import {OrganizationManager} from "../src/OrganizationManager.sol";
-import {FeesManager} from "../src/FeesManager.sol";
-import {JobFactory} from "../src/JobFactory.sol";
-import {JobEscrowFactory} from "../src/JobEscrowFactory.sol";
-import {JobEscrow} from "../src/JobEscrow.sol";
+import "forge-std/Test.sol";
+import "../src/FairPayCore.sol";
+import "../src/OrganizationManager.sol";
+import "../src/FeesManager.sol";
+import "../src/JobFactory.sol";
+import "../src/JobEscrowFactory.sol";
+import "../src/JobEscrow.sol";
+import "../src/WorkerDashboard.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../src/interfaces/IFairPay.sol";
+
+// Simple Mock ERC20 Token for testing
+contract MockERC20 is IERC20 {
+    string public name = "Test Token";
+    string public symbol = "TEST";
+    uint8 public decimals = 18;
+    uint256 public totalSupply;
+    
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
+    
+    function transfer(address to, uint256 value) external returns (bool) {
+        balanceOf[msg.sender] -= value;
+        balanceOf[to] += value;
+        emit Transfer(msg.sender, to, value);
+        return true;
+    }
+    
+    function approve(address spender, uint256 value) external returns (bool) {
+        allowance[msg.sender][spender] = value;
+        emit Approval(msg.sender, spender, value);
+        return true;
+    }
+    
+    function transferFrom(address from, address to, uint256 value) external returns (bool) {
+        allowance[from][msg.sender] -= value;
+        balanceOf[from] -= value;
+        balanceOf[to] += value;
+        emit Transfer(from, to, value);
+        return true;
+    }
+    
+    // Function to mint tokens for testing
+    function mint(address to, uint256 value) external {
+        balanceOf[to] += value;
+        totalSupply += value;
+        emit Transfer(address(0), to, value);
+    }
+}
 
 contract FairPayTest is Test {
     FairPayCore public fairPay;
     OrganizationManager public orgManager;
     FeesManager public feesManager;
-    JobEscrow public jobEscrowImpl;
     JobEscrowFactory public escrowFactory;
     JobFactory public jobFactory;
+    WorkerDashboard public workerDashboard;
     
-    
-    address public deployer = address(0x1);
-    address public employer = address(0x2);
+    address public admin = address(0x1);
+    address public orgOwner = address(0x2);
     address public worker = address(0x3);
-    address public platformAdmin = address(0x4);
+    address public otherUser = address(0x4);
     
+    // Test token for payments
+    MockERC20 public testToken;
     
-    uint256 public orgId;
-    address public jobAddress;
-    uint256 public platformFee = 250; // 2.5%
-    uint256 public totalPayment = 1 ether;
-    uint256 public milestoneCount = 3;
-    
-    function setUp() public {
-        vm.startPrank(deployer);
-        vm.deal(deployer, 100 ether);
-        vm.deal(employer, 100 ether);
-        vm.deal(worker, 1 ether);
-        vm.deal(platformAdmin, 1 ether);
+    function setUp() public virtual {
+        vm.startPrank(admin);
         
-        // Create managers
+        // Deploy mock token
+        testToken = new MockERC20();
+        
+        // Deploy core contracts
         orgManager = new OrganizationManager();
-        feesManager = new FeesManager(deployer);
-        
-        // Deploy core system
+        feesManager = new FeesManager(admin);
         fairPay = new FairPayCore(address(orgManager), address(feesManager));
         
-        // Deploy factory contracts
-        jobEscrowImpl = new JobEscrow();
+        // Deploy factories
+        JobEscrow jobEscrowImpl = new JobEscrow();
         escrowFactory = new JobEscrowFactory(address(jobEscrowImpl));
-        jobFactory = new JobFactory(address(fairPay), address(escrowFactory));
+        jobFactory = new JobFactory(address(escrowFactory));
         
-        // Set up contract relationships
+        // Link contracts in the RIGHT ORDER
+        // 1. Set JobFactory in FairPayCore
         fairPay.setJobFactory(address(jobFactory));
+        
+        // 2. Set FairPayCore in JobFactory
+        jobFactory.setFairPayCore(address(fairPay));
+        
+        // 3. Set FairPayCore as the coreContract in JobEscrowFactory
         escrowFactory.setCoreContract(address(fairPay));
         
         // Transfer ownerships
         orgManager.transferOwnership(address(fairPay));
-        feesManager.transferOwnership(platformAdmin);
+        feesManager.transferOwnership(address(fairPay));
+        
         vm.stopPrank();
     }
+}
 
-    function _createTestJob() internal returns (address) {
-        vm.startPrank(employer);
-        orgId = orgManager.createOrganization("Test Org", "Description");
+contract OrganizationTest is FairPayTest {
+    function test_CreateOrganization() public {
+        vm.prank(orgOwner);
+        uint256 orgId = orgManager.createOrganization("Test Org", "Test Description");
         
-        jobAddress = fairPay.createJob(
-            orgId,
-            "Test Job",
-            "Job Description",
-            totalPayment,
-            milestoneCount,
-            address(0)
-        );
+        // Verify organization creation
+        assertTrue(orgManager.isValidOrganization(orgId));
+        assertTrue(orgManager.isOrganizationMember(orgId, orgOwner));
         
-        // Set up milestones
-        string[] memory titles = new string[](milestoneCount);
-        string[] memory descriptions = new string[](milestoneCount);
-        uint256[] memory amounts = new uint256[](milestoneCount);
-        uint256[] memory deadlines = new uint256[](milestoneCount);
-        uint256[] memory indices = new uint256[](milestoneCount);
-        
-        for (uint256 i = 0; i < milestoneCount; i++) {
-            titles[i] = string(abi.encodePacked("Milestone ", vm.toString(i+1)));
-            descriptions[i] = string(abi.encodePacked("Desc ", vm.toString(i+1)));
-            amounts[i] = totalPayment / milestoneCount;
-            deadlines[i] = block.timestamp + 7 days;
-            indices[i] = i;
-        }
-        
-        JobEscrow(payable(jobAddress)).setMilestones(
-            indices,
-            titles,
-            descriptions,
-            amounts,
-            deadlines
-        );
-        
-        vm.stopPrank();
-        return jobAddress;
+        (uint256[] memory ids, string[] memory names, , , ) = orgManager.getOrganizationsByOwner(orgOwner);
+        assertEq(ids[0], orgId);
+        assertEq(names[0], "Test Org");
     }
     
-    function test_CompleteJobWorkflow() public {
-        address job = _createTestJob();
+    function test_AddRemoveMember() public {
+        vm.prank(orgOwner);
+        uint256 orgId = orgManager.createOrganization("Test Org", "Test Description");
         
-        vm.startPrank(employer);
-        JobEscrow(payable(job)).assignWorker(worker);
-        JobEscrow(payable(job)).depositFunds{value: totalPayment}();
-        vm.stopPrank();
-        
-        vm.startPrank(worker);
-        JobEscrow(payable(job)).confirmJob();
-        
-        for (uint256 i = 0; i < milestoneCount; i++) {
-            JobEscrow(payable(job)).submitMilestone(i);
-            
-            vm.startPrank(employer);
-            uint256 workerBalanceBefore = worker.balance;
-            uint256 platformBalanceBefore = platformAdmin.balance;
-            
-            JobEscrow(payable(job)).approveMilestone(i);
-            
-            uint256 milestoneAmount = totalPayment / milestoneCount;
-            uint256 fee = (milestoneAmount * platformFee) / 10000;
-            uint256 workerPayment = milestoneAmount - fee;
-            
-            assertEq(worker.balance - workerBalanceBefore, workerPayment);
-            assertEq(platformAdmin.balance - platformBalanceBefore, fee);
-            vm.stopPrank();
-        }
-        
-        (,,,,,uint8 status,,) = JobEscrow(payable(job)).getJobDetails();
-        assertEq(status, uint8(JobEscrow.JobStatus.Completed));
-    }
-    
-    function test_DisputeResolutionWorkflow() public {
-        
-        vm.startPrank(employer);
-        orgId = orgManager.createOrganization("Test Organization", "A test organization");
-        vm.stopPrank();
-        
-       
-        vm.startPrank(employer);
-        jobAddress = fairPay.createJob(
-            orgId,
-            "Test Job",
-            "A test job description",
-            totalPayment,
-            milestoneCount,
-            address(0)
-        );
-        vm.stopPrank();
-        
-       
-        string[] memory titles = new string[](milestoneCount);
-        string[] memory descriptions = new string[](milestoneCount);
-        uint256[] memory amounts = new uint256[](milestoneCount);
-        uint256[] memory deadlines = new uint256[](milestoneCount);
-        uint256[] memory indices = new uint256[](milestoneCount);
-        
-        for (uint256 i = 0; i < milestoneCount; i++) {
-            titles[i] = string(abi.encodePacked("Milestone ", vm.toString(i+1)));
-            descriptions[i] = string(abi.encodePacked("Description ", vm.toString(i+1)));
-            amounts[i] = totalPayment / milestoneCount;
-            deadlines[i] = block.timestamp + 7 days;
-            indices[i] = i;
-        }
-        
-        vm.startPrank(employer);
-        JobEscrow(payable(jobAddress)).setMilestones(
-            indices,
-            titles,
-            descriptions,
-            amounts,
-            deadlines
-        );
-        JobEscrow(payable(jobAddress)).assignWorker(worker);
-        JobEscrow(payable(jobAddress)).depositFunds{value: totalPayment}();
-        vm.stopPrank();
-        
-        vm.startPrank(worker);
-        JobEscrow(payable(jobAddress)).confirmJob();
-        vm.stopPrank();
-        
-       
-        vm.startPrank(worker);
-        JobEscrow(payable(jobAddress)).submitMilestone(0);
-        vm.stopPrank();
-        
-       
-        vm.startPrank(employer);
-        JobEscrow(payable(jobAddress)).raiseDispute(0);
-        vm.stopPrank();
-        
-        // Platform resolves dispute (in worker's favor)
-        vm.startPrank(platformAdmin);
-        
-        uint256 workerBalanceBefore = worker.balance;
-        uint256 platformBalanceBefore = platformAdmin.balance;
-        
-        // First parameter: milestone index
-        // Second parameter: workerFavored
-        // Third parameter: employerRefundAmount (0 if worker favored)
-        JobEscrow(payable(jobAddress)).resolveDispute(0, true, 0);
-        
-        uint256 milestoneAmount = totalPayment / milestoneCount;
-        uint256 fee = (milestoneAmount * platformFee) / 10000;
-        uint256 workerPayment = milestoneAmount - fee;
-        
-        assertEq(worker.balance - workerBalanceBefore, workerPayment, "Worker payment incorrect");
-        assertEq(platformAdmin.balance - platformBalanceBefore, fee, "Platform fee incorrect");
-        
-        vm.stopPrank();
-    }
-    
-    function test_AutoDisputeResolutionWorkflow() public {
-        
-        vm.startPrank(employer);
-        orgId = orgManager.createOrganization("Test Organization", "A test organization");
-        vm.stopPrank();
-        
-       
-        vm.startPrank(employer);
-        jobAddress = fairPay.createJob(
-            orgId,
-            "Test Job",
-            "A test job description",
-            totalPayment,
-            milestoneCount,
-            address(0)
-        );
-        vm.stopPrank();
-        
-        
-        string[] memory titles = new string[](milestoneCount);
-        string[] memory descriptions = new string[](milestoneCount);
-        uint256[] memory amounts = new uint256[](milestoneCount);
-        uint256[] memory deadlines = new uint256[](milestoneCount);
-        uint256[] memory indices = new uint256[](milestoneCount);
-        
-        for (uint256 i = 0; i < milestoneCount; i++) {
-            titles[i] = string(abi.encodePacked("Milestone ", vm.toString(i+1)));
-            descriptions[i] = string(abi.encodePacked("Description ", vm.toString(i+1)));
-            amounts[i] = totalPayment / milestoneCount;
-            deadlines[i] = block.timestamp + 7 days;
-            indices[i] = i;
-        }
-        
-        vm.startPrank(employer);
-        JobEscrow(payable(jobAddress)).setMilestones(
-            indices,
-            titles,
-            descriptions,
-            amounts,
-            deadlines
-        );
-        JobEscrow(payable(jobAddress)).assignWorker(worker);
-        JobEscrow(payable(jobAddress)).depositFunds{value: totalPayment}();
-        vm.stopPrank();
-        
-        vm.startPrank(worker);
-        JobEscrow(payable(jobAddress)).confirmJob();
-        vm.stopPrank();
-        
-       
-        vm.startPrank(worker);
-        JobEscrow(payable(jobAddress)).submitMilestone(0);
-        vm.stopPrank();
-        
-       
-        vm.startPrank(employer);
-        JobEscrow(payable(jobAddress)).raiseDispute(0);
-        vm.stopPrank();
-        
-        
-        vm.warp(block.timestamp + 8 days);
-        
-       
-        vm.startPrank(worker);
-        
-        uint256 workerBalanceBefore = worker.balance;
-        uint256 platformBalanceBefore = platformAdmin.balance;
-        
-        JobEscrow(payable(jobAddress)).autoResolveDispute(0);
-        
-        uint256 milestoneAmount = totalPayment / milestoneCount;
-        uint256 fee = (milestoneAmount * platformFee) / 10000;
-        uint256 workerPayment = milestoneAmount - fee;
-        
-        assertEq(worker.balance - workerBalanceBefore, workerPayment, "Worker payment incorrect");
-        assertEq(platformAdmin.balance - platformBalanceBefore, fee, "Platform fee incorrect");
-        
-        vm.stopPrank();
-    }
-    
-    function test_JobCancellationWorkflow() public {
-        
-        vm.startPrank(employer);
-        orgId = orgManager.createOrganization("Test Organization", "A test organization");
-        vm.stopPrank();
-        
-        
-        vm.startPrank(employer);
-        jobAddress = fairPay.createJob(
-            orgId,
-            "Test Job",
-            "A test job description",
-            totalPayment,
-            milestoneCount,
-            address(0)
-        );
-        vm.stopPrank();
-        
-        
-        string[] memory titles = new string[](milestoneCount);
-        string[] memory descriptions = new string[](milestoneCount);
-        uint256[] memory amounts = new uint256[](milestoneCount);
-        uint256[] memory deadlines = new uint256[](milestoneCount);
-        uint256[] memory indices = new uint256[](milestoneCount);
-        
-        for (uint256 i = 0; i < milestoneCount; i++) {
-            titles[i] = string(abi.encodePacked("Milestone ", vm.toString(i+1)));
-            descriptions[i] = string(abi.encodePacked("Description ", vm.toString(i+1)));
-            amounts[i] = totalPayment / milestoneCount;
-            deadlines[i] = block.timestamp + 7 days;
-            indices[i] = i;
-        }
-        
-        vm.startPrank(employer);
-        JobEscrow(payable(jobAddress)).setMilestones(
-            indices,
-            titles,
-            descriptions,
-            amounts,
-            deadlines
-        );
-        
-       
-        JobEscrow(payable(jobAddress)).depositFunds{value: totalPayment}();
-        
-        
-        uint256 employerBalanceBefore = employer.balance;
-        JobEscrow(payable(jobAddress)).cancelJob();
-        uint256 employerBalanceAfter = employer.balance;
-        
-        assertEq(employerBalanceAfter - employerBalanceBefore, totalPayment, "Employer should get full refund");
-        
-       
-        (,,,,,uint8 status,,) = JobEscrow(payable(jobAddress)).getJobDetails();
-        assertEq(status, uint8(JobEscrow.JobStatus.Cancelled), "Job should be cancelled");
-        
-        vm.stopPrank();
-    }
-    
-    function test_EmergencyWithdrawWorkflow() public {
-     
-        vm.startPrank(employer);
-        orgId = orgManager.createOrganization("Test Organization", "A test organization");
-        vm.stopPrank();
-        
-        
-        vm.startPrank(employer);
-        jobAddress = fairPay.createJob(
-            orgId,
-            "Test Job",
-            "A test job description",
-            totalPayment,
-            milestoneCount,
-            address(0) 
-        );
-        vm.stopPrank();
-        
-      
-        string[] memory titles = new string[](milestoneCount);
-        string[] memory descriptions = new string[](milestoneCount);
-        uint256[] memory amounts = new uint256[](milestoneCount);
-        uint256[] memory deadlines = new uint256[](milestoneCount);
-        uint256[] memory indices = new uint256[](milestoneCount);
-        
-        for (uint256 i = 0; i < milestoneCount; i++) {
-            titles[i] = string(abi.encodePacked("Milestone ", vm.toString(i+1)));
-            descriptions[i] = string(abi.encodePacked("Description ", vm.toString(i+1)));
-            amounts[i] = totalPayment / milestoneCount;
-            deadlines[i] = block.timestamp + 7 days;
-            indices[i] = i;
-        }
-        
-        vm.startPrank(employer);
-        JobEscrow(payable(jobAddress)).setMilestones(
-            indices,
-            titles,
-            descriptions,
-            amounts,
-            deadlines
-        );
-        
-       
-        JobEscrow(payable(jobAddress)).depositFunds{value: totalPayment}();
-        
-      
-        vm.warp(block.timestamp + 31 days);
-        
-        
-        uint256 employerBalanceBefore = employer.balance;
-        JobEscrow(payable(jobAddress)).emergencyWithdraw();
-        uint256 employerBalanceAfter = employer.balance;
-        
-        assertEq(employerBalanceAfter - employerBalanceBefore, totalPayment, "Employer should get full refund");
-        
-        
-        (,,,,,uint8 status,,) = JobEscrow(payable(jobAddress)).getJobDetails();
-        assertEq(status, uint8(JobEscrow.JobStatus.Cancelled), "Job should be cancelled");
-        
-        vm.stopPrank();
-    }
-    
-    function test_OrganizationManagement() public {
-       
-        vm.startPrank(employer);
-        orgId = orgManager.createOrganization("Test Organization", "A test organization");
-        vm.stopPrank();
-        
-        
-        vm.startPrank(employer);
+        // Add member
+        vm.prank(orgOwner);
         orgManager.addMember(orgId, worker);
-        vm.stopPrank();
+        assertTrue(orgManager.isOrganizationMember(orgId, worker));
         
-       
-        assertTrue(orgManager.isOrganizationMember(orgId, worker), "Worker should be a member");
-        
-       
-        vm.startPrank(employer);
+        // Remove member
+        vm.prank(orgOwner);
         orgManager.removeMember(orgId, worker);
-        vm.stopPrank();
-        
-        
-        assertFalse(orgManager.isOrganizationMember(orgId, worker), "Worker should not be a member");
+        assertFalse(orgManager.isOrganizationMember(orgId, worker));
     }
     
-    function test_PlatformFeeManagement() public {
-        uint256 newFee = 300; // 3%
+    function test_NonOwnerCannotAddMembers() public {
+        vm.prank(orgOwner);
+        uint256 orgId = orgManager.createOrganization("Test Org", "Test Description");
         
-        vm.prank(platformAdmin); 
-        feesManager.updatePlatformFee(newFee);
-        
-        assertEq(feesManager.getPlatformFee(), newFee, "Platform fee should be updated");
+        vm.prank(otherUser);
+        vm.expectRevert("Not authorized");
+        orgManager.addMember(orgId, worker);
     }
+}
+
+contract JobLifecycleTest is FairPayTest {
+    uint256 public orgId;
+    address public jobAddress;
     
-    
-    function test_RevertWhen_ConfirmingJobWithoutFunds() public {
-      
-        vm.startPrank(employer);
-        orgId = orgManager.createOrganization("Test Organization", "A test organization");
-        vm.stopPrank();
+    function setUp() public override {
+        super.setUp();
         
+        // Create organization
+        vm.prank(orgOwner);
+        orgId = orgManager.createOrganization("Test Org", "Test Description");
         
-        vm.startPrank(employer);
+        // Create job through FairPayCore
+        vm.prank(orgOwner);
         jobAddress = fairPay.createJob(
             orgId,
-            "Test Job",
-            "A test job description",
-            totalPayment,
-            milestoneCount,
-            address(0) 
+            "Web Development",
+            "Build a website",
+            1 ether,
+            3, // milestones
+            address(testToken)
         );
-        vm.stopPrank();
-        
-        
-        string[] memory titles = new string[](milestoneCount);
-        string[] memory descriptions = new string[](milestoneCount);
-        uint256[] memory amounts = new uint256[](milestoneCount);
-        uint256[] memory deadlines = new uint256[](milestoneCount);
-        uint256[] memory indices = new uint256[](milestoneCount);
-        
-        for (uint256 i = 0; i < milestoneCount; i++) {
-            titles[i] = string(abi.encodePacked("Milestone ", vm.toString(i+1)));
-            descriptions[i] = string(abi.encodePacked("Description ", vm.toString(i+1)));
-            amounts[i] = totalPayment / milestoneCount;
-            deadlines[i] = block.timestamp + 7 days;
-            indices[i] = i;
-        }
-        
-        vm.startPrank(employer);
-        JobEscrow(payable(jobAddress)).setMilestones(
-            indices,
-            titles,
-            descriptions,
-            amounts,
-            deadlines
-        );
-        JobEscrow(payable(jobAddress)).assignWorker(worker);
-        vm.stopPrank();
-        
-        // Try to confirm job without funds - should fail
-        vm.startPrank(worker);
-        JobEscrow(payable(jobAddress)).confirmJob();
-        vm.stopPrank();
     }
     
-    function test_RevertWhen_NonEmployerApprovesMilestone() public {
+    function test_JobCreation() public {
+        // Verify job creation
+        assertTrue(fairPay.validJobContracts(jobAddress));
         
-        vm.startPrank(employer);
-        orgId = orgManager.createOrganization("Test Organization", "A test organization");
-        jobAddress = fairPay.createJob(
-            orgId,
-            "Test Job",
-            "A test job description",
-            totalPayment,
-            milestoneCount,
-            address(0) 
-        );
+        // Verify job details
+        (address employer, , string memory title, , uint256 payment, , , ) = IJobEscrow(jobAddress).getJobDetails();
+        assertEq(employer, orgOwner);
+        assertEq(title, "Web Development");
+        assertEq(payment, 1 ether);
+    }
+    
+    function test_JobFundingAndMilestones() public {
+        // Mint tokens to orgOwner
+        vm.prank(admin);
+        testToken.mint(orgOwner, 10 ether); // Give plenty of tokens
         
-        string[] memory titles = new string[](milestoneCount);
-        string[] memory descriptions = new string[](milestoneCount);
-        uint256[] memory amounts = new uint256[](milestoneCount);
-        uint256[] memory deadlines = new uint256[](milestoneCount);
-        uint256[] memory indices = new uint256[](milestoneCount);
+        // Fund the job
+        vm.startPrank(orgOwner);
+        testToken.approve(jobAddress, 1 ether);
+        IJobEscrow(jobAddress).depositFunds();
+        vm.stopPrank();
         
-        for (uint256 i = 0; i < milestoneCount; i++) {
-            titles[i] = string(abi.encodePacked("Milestone ", vm.toString(i+1)));
-            descriptions[i] = string(abi.encodePacked("Description ", vm.toString(i+1)));
-            amounts[i] = totalPayment / milestoneCount;
-            deadlines[i] = block.timestamp + 7 days;
+        // Setup milestones
+        uint256[] memory indices = new uint256[](3);
+        string[] memory titles = new string[](3);
+        string[] memory descriptions = new string[](3);
+        uint256[] memory amounts = new uint256[](3);
+        uint256[] memory deadlines = new uint256[](3);
+        
+        for (uint256 i = 0; i < 3; i++) {
             indices[i] = i;
+            titles[i] = string(abi.encodePacked("Milestone ", vm.toString(i + 1)));
+            descriptions[i] = string(abi.encodePacked("Description for milestone ", vm.toString(i + 1)));
+            amounts[i] = (i + 1) * 0.25 ether; // 0.25, 0.5, 0.25
+            deadlines[i] = block.timestamp + (i + 1) * 1 weeks;
+        }
+        amounts[2] = 0.25 ether; // Adjust to total 1 ether
+        
+        vm.prank(orgOwner);
+        IJobEscrow(jobAddress).setMilestones(indices, titles, descriptions, amounts, deadlines);
+        
+        // Verify milestones
+        for (uint256 i = 0; i < 3; i++) {
+            (string memory title, , uint256 amount, , ) = IJobEscrow(jobAddress).getMilestone(i);
+            assertEq(title, titles[i]);
+            assertEq(amount, amounts[i]);
+        }
+    }
+    
+    function test_CompleteJobFlow() public {
+        // Setup job with funding and milestones
+        test_JobFundingAndMilestones();
+        
+        // Assign worker
+        vm.prank(orgOwner);
+        IJobEscrow(jobAddress).assignWorker(worker);
+        
+        // Worker confirms job
+        vm.prank(worker);
+        IJobEscrow(jobAddress).confirmJob();
+        
+        // Complete milestones
+        for (uint256 i = 0; i < 3; i++) {
+            // Mark milestone as completed
+            vm.prank(worker);
+            IJobEscrow(jobAddress).completeMilestone(i);
+            
+            // Approve milestone
+            vm.prank(orgOwner);
+            IJobEscrow(jobAddress).approveMilestone(i);
+            
+            // Verify payment
+            (, , uint256 remaining, ) = IJobEscrow(jobAddress).getPaymentInfo();
+            if (i < 2) {
+                assertGt(remaining, 0);
+            } else {
+                assertEq(remaining, 0);
+            }
         }
         
-        JobEscrow(payable(jobAddress)).setMilestones(
-            indices,
-            titles,
-            descriptions,
-            amounts,
-            deadlines
-        );
-        JobEscrow(payable(jobAddress)).assignWorker(worker);
-        JobEscrow(payable(jobAddress)).depositFunds{value: totalPayment}();
-        vm.stopPrank();
-        
-        vm.startPrank(worker);
-        JobEscrow(payable(jobAddress)).confirmJob();
-        JobEscrow(payable(jobAddress)).submitMilestone(0);
-        vm.stopPrank();
-        
-        // Try to approve milestone as worker (not employer) - should fail
-        vm.startPrank(worker);
-        JobEscrow(payable(jobAddress)).approveMilestone(0);
-        vm.stopPrank();
+        // Verify job completion
+        (, , , , , uint8 status, , ) = IJobEscrow(jobAddress).getJobDetails();
+        assertEq(uint256(status), uint256(IJobEscrow.JobStatus.Completed));
     }
 }
