@@ -5,10 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-interface IFairPayCore {
-    function registerWorkerJob(address _worker) external;
-}
+import "./interfaces/IFairPay.sol";
 
 contract JobEscrow is ReentrancyGuard, Initializable {
     using SafeERC20 for IERC20;

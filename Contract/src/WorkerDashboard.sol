@@ -2,34 +2,7 @@
 pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-
-interface IFairPayCore {
-    function getWorkerJobs(address _worker) external view returns (address[] memory);
-    function isWorkerAssignedToJob(address _worker, address _jobAddress) external view returns (bool);
-}
-
-interface IJobEscrow {
-    function getJobDetails() external view returns (
-        address _employer,
-        address _worker,
-        string memory _title,
-        string memory _description,
-        uint256 _totalPayment,
-        uint8 _status,
-        uint256 _milestoneCount,
-        uint256 _currentMilestone
-    );
-    
-    function getAllMilestones() external view returns (
-        string[] memory titles,
-        string[] memory descriptions,
-        uint256[] memory amounts,
-        uint256[] memory deadlines,
-        uint8[] memory statuses
-    );
-    
-    enum JobStatus { Created, InProgress, Completed, Cancelled }
-}
+import "./interfaces/IFairPay.sol";
 
 contract WorkerDashboard is Ownable {
     IFairPayCore public fairPayCore;

@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./JobFactory.sol";
 import "./FeesManager.sol";
 import "./OrganizationManager.sol";
+import "./interfaces/IFairPay.sol";
 
 contract FairPayCore is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -188,26 +189,3 @@ contract FairPayCore is Ownable, ReentrancyGuard {
     fallback() external payable {}
 }
 
-// Interface for JobEscrow to call getJobDetails
-interface IJobEscrow {
-    enum MilestoneStatus { NotStarted, InProgress, Completed, Disputed }
-    function getJobDetails() external view returns (
-        address _employer,
-        address _worker,
-        string memory _title,
-        string memory _description,
-        uint256 _totalPayment,
-        uint8 _status,
-        uint256 _milestoneCount,
-        uint256 _currentMilestone
-    );
-    function workerConfirmed() external view returns (bool);
-    function getMilestone(uint256 index) external view returns (
-        string memory _title,
-        string memory _description,
-        uint256 amount,
-        uint256 deadline,
-        uint8 _status
-    );
-    function token() external view returns (address);
-}
