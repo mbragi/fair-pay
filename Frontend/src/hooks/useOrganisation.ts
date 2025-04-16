@@ -26,7 +26,7 @@ export const useOrganizations = () => {
   const { address, isConnected } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
  const [loading, setLoading] = useState(false);
- 
+
  
 
   const { mutateAsync: sendTx, isPending } = useSendTransaction();
@@ -107,6 +107,24 @@ export const useOrganizations = () => {
       setLoading(false);
     }
   };
+ 
+ const fetchOrganizationJobs = async (
+   orgId: number
+ ): Promise<string[]> => {
+ 
+   try {
+    const jobs = await readContract({
+       contract,
+       method: "function getOrganizationJobs(uint256) returns (address[])",
+       params: [BigInt(orgId)],
+     });
+
+     return jobs as unknown as string[];
+   } catch (err) {
+     console.error("Error fetching organization jobs:", err);
+     return [];
+   }
+ };
 
   // 🔁 Auto fetch on connect
   useEffect(() => {
@@ -123,6 +141,7 @@ export const useOrganizations = () => {
 
     // exposed methods
    createOrganization,
+   fetchOrganizationJobs,
     addJobToOrganization,
     addMember,
     getOrganizationJobs,

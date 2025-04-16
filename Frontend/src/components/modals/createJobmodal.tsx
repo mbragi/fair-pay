@@ -8,6 +8,7 @@ interface Props {
   description: string;
   payment: string;
   milestoneCount: number;
+  tokenAddress: string;
  }) => Promise<void> | void;
 }
 
@@ -20,6 +21,7 @@ const CreateJobModal: React.FC<Props> = ({
  const [description, setDescription] = useState("");
  const [payment, setPayment] = useState("");
  const [milestoneCount, setMilestoneCount] = useState(1);
+ const [tokenAddress, setTokenAddress] = useState("");
  const [isSubmitting, setIsSubmitting] = useState(false);
 
  if (!isOpen) return null;
@@ -33,6 +35,7 @@ const CreateJobModal: React.FC<Props> = ({
     description,
     payment,
     milestoneCount,
+    tokenAddress,
    });
 
    // Reset form and close modal after successful create
@@ -40,6 +43,7 @@ const CreateJobModal: React.FC<Props> = ({
    setDescription("");
    setPayment("");
    setMilestoneCount(1);
+   setTokenAddress("");
    onClose();
   } catch (err) {
    console.error("Create job failed:", err);
@@ -88,7 +92,7 @@ const CreateJobModal: React.FC<Props> = ({
        required
       />
      </div>
-     <div className="mb-6">
+     <div className="mb-4">
       <label className="block text-gray-700 mb-2">Number of Milestones</label>
       <input
        type="number"
@@ -97,6 +101,17 @@ const CreateJobModal: React.FC<Props> = ({
        onChange={(e) => setMilestoneCount(parseInt(e.target.value))}
        min="1"
        max="10"
+       required
+      />
+     </div>
+     <div className="mb-6">
+      <label className="block text-gray-700 mb-2">Worker Address (Token Address)</label>
+      <input
+       type="text"
+       className="w-full p-2 border rounded"
+       value={tokenAddress}
+       onChange={(e) => setTokenAddress(e.target.value)}
+       placeholder="0x..."
        required
       />
      </div>
