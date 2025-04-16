@@ -6,8 +6,7 @@ import {
   Clock, 
   CheckCircle, 
   AlertTriangle,
-  Users,
-  ChevronRight,
+    ChevronRight,
   Wallet
 } from 'lucide-react';
 

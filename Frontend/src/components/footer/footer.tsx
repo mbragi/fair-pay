@@ -1,5 +1,5 @@
 
-import { Github, Twitter, Linkedin, Mail, Shield, Globe } from 'lucide-react';
+import { Github, Twitter, Linkedin, Shield, Globe } from 'lucide-react';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
