@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 interface IFairPayCore {
     function registerWorkerJob(address _worker) external;
     function validJobContracts(address) external view returns (bool);
-    function createOrganization(string memory _name, string memory _description) external returns (uint256);
+    function createOrganization(address owner, string memory _name, string memory _description) external returns (uint256);
     function createJob(
         uint256 _orgId,
         string memory _title,

@@ -1,0 +1,25 @@
+{
+  "abi": [
+    {
+      "type": "function",
+      "name": "getWorkerJobs",
+      "inputs": [
+        { "name": "_worker", "type": "address", "internalType": "address" }
+      ],
+      "outputs": [
+        { "name": "", "type": "address[]", "internalType": "address[]" }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "isWorkerAssignedToJob",
+      "inputs": [
+        { "name": "_worker", "type": "address", "internalType": "address" },
+        { "name": "_jobAddress", "type": "address", "internalType": "address" }
+      ],
+      "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+      "stateMutability": "view"
+    }
+  ]
+}

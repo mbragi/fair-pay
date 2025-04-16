@@ -29,6 +29,8 @@ contract JobEscrow is ReentrancyGuard, Initializable {
     error AmountMismatch();
     error InvalidRefund();
     error InvalidAmount();
+    error WorkerAlreadyAssigned();
+    error OnlyAssignedWorker();
 
     
     address public platform;
@@ -70,6 +72,7 @@ contract JobEscrow is ReentrancyGuard, Initializable {
     event JobCancel();
     event DisputeRaise(uint256 index);
     event DisputeResolve(uint256 index, bool workerFavored);
+    event WorkerAssigned(address worker);
 
     function initialize(
         address _platform,
@@ -126,6 +129,15 @@ contract JobEscrow is ReentrancyGuard, Initializable {
         }
         emit FundsDeposited(msg.sender, msg.value);
     }
+
+    function assignWorker(address _worker) external onlyEmployer {
+        if (status != JobStatus.Created) revert JobStarted();
+        if (_worker == address(0)) revert InvalidAddress();
+        if (worker != address(0)) revert WorkerAlreadyAssigned();
+        
+        worker = _worker;
+        emit WorkerAssigned(_worker);
+    }
     
     function setMilestones(
         uint256[] calldata _indices,
@@ -162,6 +174,9 @@ contract JobEscrow is ReentrancyGuard, Initializable {
     
     function confirmJob() external {
         if (msg.sender != worker) revert OnlyWorker();
+        if (workerConfirmed) revert AlreadyConfirmed();
+        if (status != JobStatus.Created) revert JobStarted();
+        if (msg.sender != worker) revert OnlyAssignedWorker();
         if (workerConfirmed) revert AlreadyConfirmed();
         if (status != JobStatus.Created) revert JobStarted();
         
