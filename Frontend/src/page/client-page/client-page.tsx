@@ -27,7 +27,6 @@ const ClientPage: React.FC = () => {
   const [toast, setToast] = useState({ message: '', isError: false, visible: false });
   const { isPending, loading, organizations, createOrganization, fetchOrganizationsByOwner } = useOrganizations();
   const { jobs } = useJobs(selectedOrgId);
-  // const { myWork } = useMyWork();
 
   const showToast = (message: string, isError = false) => {
     setToast({ message, isError, visible: true });
