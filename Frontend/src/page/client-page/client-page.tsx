@@ -46,6 +46,7 @@ const ClientPage: React.FC = () => {
     createJob,
   } = useCreateJob();
 
+
   const showToast = (message: string, isError = false) => {
     setToast({ message, isError, visible: true });
     setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
