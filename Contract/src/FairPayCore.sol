@@ -38,19 +38,6 @@ contract FairPayCore is Ownable, ReentrancyGuard {
         require(jobFactory == address(0), "JobFactory already set");
         jobFactory = _jobFactory;
     }
-
-    function createOrganization(string memory name, string memory description) external returns (uint256) 
-    {
-        uint256 orgId = organizationManager.createOrganization(msg.sender, name, description);
-        return orgId;
-    }
-
-    function addOrganizationMember(uint256 _orgId, address _member) external {
-        require(organizationManager.isValidOrganization(_orgId), "Invalid org");
-        require(organizationManager.isOrganizationMember(_orgId, msg.sender), "Not a member");
-        organizationManager.addMember(_orgId, _member);
-    }
-    
     
     function createJob(
         uint256 _orgId,

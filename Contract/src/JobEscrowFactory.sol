@@ -34,7 +34,7 @@ contract JobEscrowFactory is Ownable {
         uint256 _milestoneCount,
         address _token,
         uint256 _platformFee
-    ) external returns (address) {
+    ) external onlyCore returns (address) {
         address clone = Clones.clone(implementation);
         
         JobEscrow(payable(clone)).initialize(

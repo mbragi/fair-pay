@@ -16,16 +16,6 @@
     { "type": "receive", "stateMutability": "payable" },
     {
       "type": "function",
-      "name": "addOrganizationMember",
-      "inputs": [
-        { "name": "_orgId", "type": "uint256", "internalType": "uint256" },
-        { "name": "_member", "type": "address", "internalType": "address" }
-      ],
-      "outputs": [],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
       "name": "createJob",
       "inputs": [
         { "name": "_orgId", "type": "uint256", "internalType": "uint256" },
@@ -44,16 +34,6 @@
         { "name": "_token", "type": "address", "internalType": "address" }
       ],
       "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
-      "name": "createOrganization",
-      "inputs": [
-        { "name": "name", "type": "string", "internalType": "string" },
-        { "name": "description", "type": "string", "internalType": "string" }
-      ],
-      "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
       "stateMutability": "nonpayable"
     },
     {

@@ -66,7 +66,6 @@ contract OrganizationManager {
     
     
     function createOrganization(
-        address _owner,  
         string memory _name, 
         string memory _description
     ) external returns (uint256) {
@@ -74,16 +73,16 @@ contract OrganizationManager {
         
         organizationCount++;
         organizations[organizationCount] = Organization({
-            owner: _owner,  
+            owner: msg.sender,
             name: _name,
             description: _description,
             isActive: true,
             createdAt: block.timestamp
         });
         
-        organizationMembers[organizationCount][_owner] = true;  
+        organizationMembers[organizationCount][msg.sender] = true;
         
-        emit OrganizationCreated(organizationCount, _owner, _name);
+        emit OrganizationCreated(organizationCount, msg.sender, _name);
         return organizationCount;
     }
 
