@@ -192,19 +192,7 @@ const ServiceProviderDashboard = () => {
         </div>
       )} */}
       
-      <div className="bg-white shadow-lg rounded-lg p-4 mb-8">
-        <div className="flex items-center">
-          <div className="bg-indigo-100 p-3 rounded-full">
-            <svg className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </div>
-          <div className="ml-4">
-            <h2 className="text-lg font-semibold text-gray-700">Connected Account</h2>
-            <p className="text-sm font-mono text-gray-500">{account}</p>
-          </div>
-        </div>
-      </div>
+      
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1">
