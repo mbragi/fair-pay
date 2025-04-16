@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 
 import { Clock, CheckCircle, AlertTriangle, XCircle, FileText } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useServiceProvider } from "../../hooks/useServiceProvider";
 
 interface Job {
   address: `0x${string}`;
@@ -33,81 +34,34 @@ interface Milestone {
   status: string;
 }
 
-// Sample ABI - replace with actual ABI
-// const JobEscrowABI = [];
 
 const ServiceProviderDashboard = () => {
   const { address: account, isConnected } = useAuth();
-
+  
+  const {
+    jobs,
+    selectedJob,
+    setSelectedJob,
+    jobDetails,
+    milestones,
+    loading,
+    isPending,
+    confirmJob,
+    submitMilestone,
+  } = useServiceProvider();
   // State
-  const [assignedJobs, setAssignedJobs] = useState<Job[]>([]);
+ 
   const [activeJob, setActiveJob] = useState<`0x${string}` | null>(null);
-  const [jobDetails, setJobDetails] = useState<JobDetails | null>(null);
-  const [milestones, setMilestones] = useState<Milestone[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+ 
 
-  // Fetch all jobs assigned to this worker
-  useEffect(() => {
-    if (isConnected && account) {
-      fetchAssignedJobs(account as '0x');
-    }
-  }, [isConnected, account]);
+ 
 
-  // When active job changes, fetch its details
+
   useEffect(() => {
     if (activeJob) {
       loadJobDetails();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeJob]);
-
-  const fetchAssignedJobs = async (workerAddress: `0x${string}`) => {
-    setLoading(true);
-    try {
-      // For demo purposes, using mock data
-      const mockJobs: Job[] = [
-        {
-          address: '0x123456789abcdef123456789abcdef123456789a' as `0x${string}`,
-          employer: '0xabcdef123456789abcdef123456789abcdef1234',
-          worker: workerAddress,
-          title: 'Website Redesign for TechCorp',
-          totalPayment: '2.5',
-          status: 'InProgress',
-          currentMilestone: 1,
-          milestoneCount: 4
-        },
-        {
-          address: '0x987654321fedcba987654321fedcba987654321f' as `0x${string}`,
-          employer: '0xfedcba987654321fedcba987654321fedcba9876',
-          worker: workerAddress,
-          title: 'Logo Design for StartupX',
-          totalPayment: '0.8',
-          status: 'Created',
-          currentMilestone: 0,
-          milestoneCount: 2
-        },
-        {
-          address: '0xaabbcc112233445566778899aabbcc112233445' as `0x${string}`,
-          employer: '0x112233445566778899aabbcc112233445566778',
-          worker: workerAddress,
-          title: 'Smart Contract Audit',
-          totalPayment: '3.2',
-          status: 'Completed',
-          currentMilestone: 2,
-          milestoneCount: 3
-        }
-      ];
-      
-      setAssignedJobs(mockJobs);
-      // Auto-select the first job for the mockup
-      setActiveJob(mockJobs[0].address);
-    } catch (err) {
-      console.error('Error fetching jobs:', err);
-      setError('Failed to load assigned jobs');
-    }
-    setLoading(false);
-  };
 
   const loadJobDetails = async () => {
     if (!activeJob) return;
@@ -168,50 +122,7 @@ const ServiceProviderDashboard = () => {
     }
   };
 
-  const confirmJob = async () => {
-    if (!activeJob) return;
-    
-    try {
-      setLoading(true);
-      // Mock confirmation for demo
-      const updatedDetails = { ...jobDetails, status: 'InProgress' } as JobDetails;
-      setJobDetails(updatedDetails);
-      setLoading(false);
-    } catch (err) {
-      console.error('Error confirming job:', err);
-      setError('Failed to confirm job');
-      setLoading(false);
-    }
-  };
 
-  const submitMilestone = async (milestoneIndex: number) => {
-    if (!activeJob) return;
-    
-    try {
-      setLoading(true);
-      // Mock submission for demo
-      const updatedMilestones = [...milestones];
-      updatedMilestones[milestoneIndex] = {
-        ...updatedMilestones[milestoneIndex],
-        status: 'Completed'
-      };
-      setMilestones(updatedMilestones);
-      
-      // Update current milestone if applicable
-      if (jobDetails && jobDetails.currentMilestone === milestoneIndex) {
-        setJobDetails({
-          ...jobDetails,
-          currentMilestone: milestoneIndex + 1
-        });
-      }
-      
-      setLoading(false);
-    } catch (err) {
-      console.error('Error submitting milestone:', err);
-      setError('Failed to submit milestone');
-      setLoading(false);
-    }
-  };
 
   const autoResolveDispute = async (milestoneIndex: number) => {
     if (!activeJob) return;
@@ -257,7 +168,7 @@ const ServiceProviderDashboard = () => {
  
 
   return (
-    <div className=" mx-auto p-6 bg-gradient-to-r from-indigo-50 to-blue-50 ">
+    <div className=" mx-auto h-screen p-6 bg-gradient-to-r from-indigo-50 to-blue-50 ">
       <h1 className="text-3xl font-bold text-indigo-800 mb-8">Service Provider Dashboard</h1>
       
       {loading && (
@@ -269,7 +180,7 @@ const ServiceProviderDashboard = () => {
         </div>
       )}
       
-      {error && (
+      {/* {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded shadow">
           <div className="flex">
             <div className="py-1"><AlertTriangle className="h-6 w-6 text-red-500 mr-3" /></div>
@@ -279,7 +190,7 @@ const ServiceProviderDashboard = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
       
       <div className="bg-white shadow-lg rounded-lg p-4 mb-8">
         <div className="flex items-center">
@@ -302,7 +213,7 @@ const ServiceProviderDashboard = () => {
               <h2 className="text-xl font-semibold text-white">My Assigned Jobs</h2>
             </div>
             
-            {assignedJobs.length === 0 ? (
+            {jobs.length === 0 ? (
               <div className="p-6 text-center">
                 <svg className="h-12 w-12 text-gray-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -311,11 +222,11 @@ const ServiceProviderDashboard = () => {
               </div>
             ) : (
               <div className="divide-y divide-gray-200">
-                {assignedJobs.map((job) => (
+                {jobs.map((job) => (
                   <div 
                     key={job.address}
                     className={`p-4 cursor-pointer transition-colors hover:bg-indigo-50 ${activeJob === job.address ? 'bg-indigo-100 border-l-4 border-indigo-600' : ''}`}
-                    onClick={() => setActiveJob(job.address)}
+                    onClick={() => setActiveJob(job.address as `0x${string}`)}
                   >
                     <div className="flex items-center justify-between">
                       <h3 className="font-medium text-gray-800">{job.title}</h3>

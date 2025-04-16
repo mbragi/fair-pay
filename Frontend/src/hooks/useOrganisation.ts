@@ -40,7 +40,6 @@ export const useOrganizations = () => {
     });
     await sendTx(tx);
   };
-
   const addJobToOrganization = async (orgId: number, jobAddress: string) => {
     const tx = prepareContractCall({
       contract,
