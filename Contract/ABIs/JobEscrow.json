@@ -18,6 +18,15 @@
     },
     {
       "type": "function",
+      "name": "assignWorker",
+      "inputs": [
+        { "name": "_worker", "type": "address", "internalType": "address" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
       "name": "cancelJob",
       "inputs": [],
       "outputs": [],
@@ -502,6 +511,19 @@
       ],
       "anonymous": false
     },
+    {
+      "type": "event",
+      "name": "WorkerAssigned",
+      "inputs": [
+        {
+          "name": "worker",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
     { "type": "error", "name": "AlreadyConfirmed", "inputs": [] },
     { "type": "error", "name": "AmountMismatch", "inputs": [] },
     { "type": "error", "name": "DisputePeriodActive", "inputs": [] },
@@ -516,6 +538,7 @@
     { "type": "error", "name": "JobStarted", "inputs": [] },
     { "type": "error", "name": "NotDisputed", "inputs": [] },
     { "type": "error", "name": "NotInitializing", "inputs": [] },
+    { "type": "error", "name": "OnlyAssignedWorker", "inputs": [] },
     { "type": "error", "name": "OnlyEmployer", "inputs": [] },
     { "type": "error", "name": "OnlyPlatform", "inputs": [] },
     { "type": "error", "name": "OnlyWorker", "inputs": [] },
@@ -527,6 +550,7 @@
         { "name": "token", "type": "address", "internalType": "address" }
       ]
     },
-    { "type": "error", "name": "TooEarly", "inputs": [] }
+    { "type": "error", "name": "TooEarly", "inputs": [] },
+    { "type": "error", "name": "WorkerAlreadyAssigned", "inputs": [] }
   ]
 }

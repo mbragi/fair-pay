@@ -25,6 +25,7 @@
       "type": "function",
       "name": "createOrganization",
       "inputs": [
+        { "name": "_owner", "type": "address", "internalType": "address" },
         { "name": "_name", "type": "string", "internalType": "string" },
         { "name": "_description", "type": "string", "internalType": "string" }
       ],
