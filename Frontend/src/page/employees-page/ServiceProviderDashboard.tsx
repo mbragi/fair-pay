@@ -123,7 +123,6 @@ const ServiceProviderDashboard = () => {
   };
 
 
-
   const autoResolveDispute = async (milestoneIndex: number) => {
     if (!activeJob) return;
     
@@ -299,7 +298,7 @@ const ServiceProviderDashboard = () => {
                   
                   {jobDetails.status === 'Created' && jobDetails.worker === account && (
                     <button 
-                      onClick={confirmJob}
+                      onClick={() => confirmJob(activeJob as string)}
                       className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors shadow-md flex items-center justify-center"
                       disabled={loading}
                     >
@@ -355,7 +354,7 @@ const ServiceProviderDashboard = () => {
                          milestone.status === 'InProgress' && 
                          jobDetails.status === 'InProgress' && (
                           <button 
-                            onClick={() => submitMilestone(index)}
+                            onClick={() => submitMilestone(jobDetails.address ,index)}
                             className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors shadow"
                             disabled={loading}
                           >

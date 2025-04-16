@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { useOrganizations } from "../../hooks/useOrganisation";
-import { useJobs } from "../../hooks/useJobsEscrow";
+import { useFetchOrganizationsByOwner } from "../../hooks/useFetchOrganisationsByOwner";
+import { useCreateOrganization } from "../../hooks/useCreateOrganisation";
+import { useCreateJob } from "../../hooks/useCreateJob";
+import { useFetchOrganizationJobs } from "../../hooks/useFetchOrganisationsJobs";
 import OrganizationList from "../../components/lists/organisationList";
 import JobList from "../../components/lists/jobList";
 import CreateOrganizationModal from "../../components/modals/organizationModal";
@@ -16,28 +18,33 @@ const ClientPage: React.FC = () => {
 
   const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
   const [selectedJob, setSelectedJob] = useState<any>(null);
-
   const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
   const [showCreateJobModal, setShowCreateJobModal] = useState(false);
   const [showJobDetailsModal, setShowJobDetailsModal] = useState(false);
   const [showMilestonesModal, setShowMilestonesModal] = useState(false);
-
   const [toast, setToast] = useState({ message: '', isError: false, visible: false });
 
   const {
-    isPending: orgPending,
-    loading: orgLoading,
+    data:
     organizations,
-    createOrganization,
-    fetchOrganizationsByOwner
-  } = useOrganizations();
+    isLoading: orgLoading,
+    refetch: refetchOrganizations
+  } = useFetchOrganizationsByOwner(address ?? '');
 
   const {
-    jobs,
-    isPending: jobsPending,
+    createOrganization,
+    isPending: orgPending,
+  } = useCreateOrganization();
+
+  const {
+    data:jobs,
+    refetch: refetchJobs,
+    isLoading: jobsPending
+  } = useFetchOrganizationJobs(selectedOrgId ?? 0);
+
+  const {
     createJob,
-    refetch: refetchJobs
-  } = useJobs(selectedOrgId);
+  } = useCreateJob();
 
 
   const showToast = (message: string, isError = false) => {
@@ -53,20 +60,10 @@ const ClientPage: React.FC = () => {
           <p className="text-gray-600 mb-6">
             To use FairPay, you'll need a smart wallet account. Click Get Started.
           </p>
-          {/* <button
-            onClick={() => {
-              // Trigger wallet connect / smart account creation
-              // E.g. call loginWithSmartWallet() or redirect
-            }}
-            className="bg-indigo-600 text-white px-6 py-3 rounded hover:bg-indigo-700 transition"
-          >
-            Get Started
-          </button> */}
         </div>
       </div>
     );
   }
-
 
   return (
     <div className="bg-gradient-to-br from-indigo-50 to-blue-50 min-h-screen py-10 px-4">
@@ -75,17 +72,17 @@ const ClientPage: React.FC = () => {
 
         {!selectedOrgId ? (
           <OrganizationList
-            organizations={organizations}
+            organizations={organizations as unknown as any[]}
             onCreateClick={() => setShowCreateOrgModal(true)}
             onSelect={id => setSelectedOrgId(id)}
             isLoading={orgLoading}
           />
         ) : (
           <JobList
-            jobs={jobs}
+            jobs={jobs as unknown as any[]}
             isLoading={jobsPending}
             selectedOrgId={selectedOrgId}
-            organizations={organizations}
+            organizations={organizations as unknown as any[]}
             onCreateClick={() => setShowCreateJobModal(true)}
             onSelectJob={(job) => {
               setSelectedJob(job);
@@ -95,7 +92,6 @@ const ClientPage: React.FC = () => {
           />
         )}
 
-        {/* Modals */}
         <CreateOrganizationModal
           isLoading={orgPending}
           isOpen={showCreateOrgModal}
@@ -103,9 +99,9 @@ const ClientPage: React.FC = () => {
           onCreate={async (name, description) => {
             try {
               await createOrganization(name, description);
-              setShowCreateOrgModal(false);
               showToast("Organization created successfully");
-              if (address) await fetchOrganizationsByOwner(address);
+              await refetchOrganizations();
+              setShowCreateOrgModal(false);
             } catch (e) {
               console.error(e);
               showToast("Failed to create organization", true);

@@ -75,6 +75,8 @@ export const useServiceProvider = () => {
 
 
 
+
+
   //________________________ 📥 READ METHODS__________________________
   
   const fetchAssignedJobs = async () => {
@@ -139,7 +141,6 @@ export const useServiceProvider = () => {
     try {
       
 
-      // Get basic job details
       const [
         employer,
         worker,
