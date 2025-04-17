@@ -1,13 +1,13 @@
 // useFetchOrganizationJobs.ts
 import { useReadContract } from "thirdweb/react";
-import { OrganizationManager } from "../abis/addresses";
+import { FairPayCore } from "../abis/addresses";
 import { client } from "../client";
 import { baseSepolia } from "thirdweb/chains";
 import { getContract } from "thirdweb";
 
 export const useFetchOrganizationJobs = (orgId: number) => {
   const contract = getContract({
-      address: OrganizationManager,
+      address: FairPayCore,
      chain: baseSepolia,
      client,
    });

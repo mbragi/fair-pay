@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { baseSepolia } from "thirdweb/chains";
 import { getContract, prepareContractCall, readContract } from "thirdweb";
 import { useSendTransaction } from "thirdweb/react";
-import { OrganizationManager } from "../abis/addresses";
+import { FairPayCore } from "../abis/addresses";
 import { ethers } from "ethers";
 import { useAuth } from "../context/AuthContext";
 import { client } from "../client";
@@ -27,13 +27,13 @@ export interface Milestone {
 }
 
 const contract = getContract({
-  address:  OrganizationManager,
+  address:  FairPayCore,
   chain: baseSepolia,
   client,
 });
 
 const JobEscrow = getContract({
-  address:  OrganizationManager,
+  address:  FairPayCore,
   chain: baseSepolia,
   client,
 });
@@ -83,7 +83,7 @@ export const useServiceProvider = () => {
     setLoading(true);
     try {
       const jobAddresses = await readContract({
-        contract: workerDashboardContract,
+        contract,
         method: "function getMyJobs() returns (address[])",
         params: [],
       });

@@ -12,6 +12,9 @@ const Header = () => {
     if (address) setModalOpen(false);
   }, [address]);
 
+
+  
+
   return (
     <header className="shadow-md border-b py-4 px-6 flex justify-between items-center">
       <Link to="/" className="text-2xl font-bold text-blue-700">
@@ -21,10 +24,9 @@ const Header = () => {
       <nav className="space-x-6 hidden md:flex">
         <Link to="/features" className="hover:text-blue-600">Features</Link>
         <Link to="/howitworks" className="hover:text-blue-600">How it Works</Link>
-        <a href="#testimonials" className="hover:text-blue-600">Testimonials</a>
       </nav>
 
-      <div className="flex items-center">
+      <div className="flex items-center  w-44">
         {isConnected || address ? (
           <AccountDetails />
         ) : (
