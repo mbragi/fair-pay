@@ -67,6 +67,12 @@ interface IJobEscrow {
         uint256[] memory deadlines,
         uint8[] memory statuses
     );
+
+    function resolveDispute(
+        uint256 _index, 
+        bool _workerFavored,
+        uint256 _employerRefund
+    ) external;
     
 }
 
