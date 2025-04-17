@@ -10,6 +10,7 @@ import { client } from "../client";
 import { baseSepolia } from "thirdweb/chains";
 
 const AccountDetails = () => {
+
   const { address, disconnect } = useAuth();
 
   if (!address) return null;

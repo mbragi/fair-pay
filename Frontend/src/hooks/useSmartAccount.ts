@@ -1,8 +1,8 @@
 import { useConnect } from "thirdweb/react";
 import { inAppWallet } from "thirdweb/wallets";
+
 import { baseSepolia } from "thirdweb/chains";
 import { client } from "../client"; // assumes you export createThirdwebClient here
-
 type Strategy = "google" | "passkey";
 
 const useSmartAccount = (strategy: Strategy) => {

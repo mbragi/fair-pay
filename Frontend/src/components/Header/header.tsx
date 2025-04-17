@@ -19,7 +19,7 @@ const Header = () => {
       </Link>
 
       <nav className="space-x-6 hidden md:flex">
-        <a href="#features" className="hover:text-blue-600">Features</a>
+        <Link to="/features" className="hover:text-blue-600">Features</Link>
         <Link to="/howitworks" className="hover:text-blue-600">How it Works</Link>
         <a href="#testimonials" className="hover:text-blue-600">Testimonials</a>
       </nav>

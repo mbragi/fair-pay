@@ -1,5 +1,6 @@
 import LandingPage from "./page/landing-page/landing-page";
 import HowItWorksSection from "./components/landing-page-component/howitworks-section";
+import FeaturesPage from "./components/landing-page-component/features-page";
 import "@rainbow-me/rainbowkit/styles.css";
 import ClientPage from "./page/client-page/client-page";
 import ServiceProviderDashboard from "./page/employees-page/ServiceProviderDashboard";
@@ -20,6 +21,7 @@ function App() {
       <Route path="/" element={<Root />}>
         <Route index element={<LandingPage />} />
         <Route path="/howitworks" element={<HowItWorksSection />} />
+        <Route path="/features" element={<FeaturesPage/>} />
         <Route path="/clientpage" element={<ClientPage />} />
         <Route path="/providerspage" element={<ServiceProviderDashboard />} />
       </Route>
@@ -28,12 +30,12 @@ function App() {
 
 
   return (
+
     <ThirdwebProvider >
       <AuthProvider>
         <RouterProvider router={router} />
       </AuthProvider>
     </ThirdwebProvider>
-
   );
 }
 
