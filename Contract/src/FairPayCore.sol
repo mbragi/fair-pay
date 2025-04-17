@@ -50,6 +50,16 @@ contract FairPayCore is Ownable, ReentrancyGuard {
         require(organizationManager.isOrganizationMember(_orgId, msg.sender), "Not a member");
         organizationManager.addMember(_orgId, _member);
     }
+
+    function getOrganizationsByOwner(address _owner) external view returns (
+        uint256[] memory ids,
+        string[] memory names,
+        string[] memory descriptions,
+        bool[] memory activeStatuses,
+        uint256[] memory creationTimes
+    ) {
+        return organizationManager.getOrganizationsByOwner(_owner);
+    }
     
     function createJob(
         uint256 _orgId,
