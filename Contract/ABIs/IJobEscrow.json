@@ -2,27 +2,6 @@
   "abi": [
     {
       "type": "function",
-      "name": "getAllMilestones",
-      "inputs": [],
-      "outputs": [
-        { "name": "titles", "type": "string[]", "internalType": "string[]" },
-        {
-          "name": "descriptions",
-          "type": "string[]",
-          "internalType": "string[]"
-        },
-        { "name": "amounts", "type": "uint256[]", "internalType": "uint256[]" },
-        {
-          "name": "deadlines",
-          "type": "uint256[]",
-          "internalType": "uint256[]"
-        },
-        { "name": "statuses", "type": "uint8[]", "internalType": "uint8[]" }
-      ],
-      "stateMutability": "view"
-    },
-    {
-      "type": "function",
       "name": "getJobDetails",
       "inputs": [],
       "outputs": [
@@ -47,6 +26,35 @@
           "internalType": "uint256"
         }
       ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getMilestone",
+      "inputs": [
+        { "name": "index", "type": "uint256", "internalType": "uint256" }
+      ],
+      "outputs": [
+        { "name": "_title", "type": "string", "internalType": "string" },
+        { "name": "_description", "type": "string", "internalType": "string" },
+        { "name": "amount", "type": "uint256", "internalType": "uint256" },
+        { "name": "deadline", "type": "uint256", "internalType": "uint256" },
+        { "name": "_status", "type": "uint8", "internalType": "uint8" }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "token",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "workerConfirmed",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
       "stateMutability": "view"
     }
   ]

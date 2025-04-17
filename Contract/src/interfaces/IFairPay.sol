@@ -32,6 +32,7 @@ interface IJobEscrow {
     );
     function token() external view returns (address);
     function assignWorker(address _worker) external;
+    function cancelJob() external;
     function confirmJob() external;
     function completeMilestone(uint256 index) external;
     function approveMilestone(uint256 index) external;
@@ -41,6 +42,11 @@ interface IJobEscrow {
         uint256 remainingAmount,
         uint256 platformFeeAmount
     );
+    function resolveDispute(
+        uint256 _index, 
+        bool _workerFavored,
+        uint256 _employerRefund
+    ) external;
     function depositFunds() external payable;
     function setMilestones(
         uint256[] calldata _indices,
