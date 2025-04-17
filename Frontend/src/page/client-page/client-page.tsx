@@ -24,12 +24,14 @@ const ClientPage: React.FC = () => {
   const [showMilestonesModal, setShowMilestonesModal] = useState(false);
   const [toast, setToast] = useState({ message: '', isError: false, visible: false });
 
+
   const {
-    data:
-    organizations,
-    isLoading: orgLoading,
-    refetch: refetchOrganizations
-  } = useFetchOrganizationsByOwner(address ?? '');
+  data: organizations,
+  isLoading: orgLoading,
+  refetch: refetchOrganizations,
+} = useFetchOrganizationsByOwner(address ?? "");
+
+console.log(organizations); 
 
   const {
     createOrganization,
@@ -51,6 +53,8 @@ const ClientPage: React.FC = () => {
     setToast({ message, isError, visible: true });
     setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
   };
+
+  console.log(organizations)
 
   if (!isConnected || !address) {
     return (
