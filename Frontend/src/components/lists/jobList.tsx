@@ -21,7 +21,9 @@ const JobList: React.FC<Props> = ({
  onCreateClick,
  onBack,
 }) => {
+
  const orgName = organizations.find((org) => org.id === selectedOrgId)?.name;
+
 
  return (
   <div>

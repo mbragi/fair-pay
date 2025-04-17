@@ -4,18 +4,21 @@ interface Props {
  isOpen: boolean;
  onClose: () => void;
  onCreate: (job: {
+  orgId: number | null; // Add this
   title: string;
   description: string;
   payment: string;
   milestoneCount: number;
   tokenAddress: string;
  }) => Promise<void> | void;
+ selectedOrgId: number | null; // Add this
 }
 
 const CreateJobModal: React.FC<Props> = ({
  isOpen,
  onClose,
  onCreate,
+ selectedOrgId,
 }) => {
  const [title, setTitle] = useState("");
  const [description, setDescription] = useState("");
@@ -25,12 +28,13 @@ const CreateJobModal: React.FC<Props> = ({
  const [isSubmitting, setIsSubmitting] = useState(false);
 
  if (!isOpen) return null;
-
+ 
  const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setIsSubmitting(true);
   try {
    await onCreate({
+    orgId: selectedOrgId,    
     title,
     description,
     payment,
