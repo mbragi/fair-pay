@@ -366,8 +366,6 @@ export const useFetchOrganizationsByOwner = (owner: string) => {
     abi:organizationManagerAbi
   });
 
-  console.log("Owner address:", owner);
-  console.log("Contract address:", OrganizationManager);
 
   const { data, isLoading,error, refetch } = useReadContract({
     contract,
@@ -375,8 +373,7 @@ export const useFetchOrganizationsByOwner = (owner: string) => {
     params: [owner],
   });
 
-  console.log("Raw contract data:", data);
-  console.log("Contract error:", error);
+
   
   const organizations = React.useMemo(() => {
     if (!data) return [];

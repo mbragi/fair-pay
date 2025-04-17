@@ -2,6 +2,7 @@ import { useSendTransaction } from "thirdweb/react";
 import { prepareContractCall, getContract } from "thirdweb";
 import { client } from "../client";
 import { baseSepolia } from "thirdweb/chains";
+import { parseEther, formatUnits } from 'ethers/lib/utils';
 import { FairPayCore } from "../abis/addresses";
 
 export const useCreateJob = () => {
@@ -29,7 +30,7 @@ export const useCreateJob = () => {
         BigInt(orgId),
         title,
         description,
-        BigInt(totalPayment),
+        BigInt(parseEther(totalPayment).toString()),
         BigInt(milestoneCount),
         tokenAddress,
       ],

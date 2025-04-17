@@ -31,7 +31,6 @@ const ClientPage: React.FC = () => {
   refetch: refetchOrganizations,
 } = useFetchOrganizationsByOwner(address ?? "");
 
-console.log(organizations); 
 
   const {
     createOrganization,
@@ -118,7 +117,7 @@ console.log(organizations);
           onClose={() => setShowCreateJobModal(false)}
           onCreate={async (jobData) => {
             try {
-              const job = await createJob(selectedOrgId ?? 0, jobData.title, jobData.description, jobData.payment, jobData.milestoneCount, jobData.tokenAddress);
+              const job = await createJob(1, jobData.title, jobData.description, jobData.payment, jobData.milestoneCount, jobData.tokenAddress);
               setSelectedJob(job);
               setShowCreateJobModal(false);
               setShowMilestonesModal(true);
@@ -129,6 +128,7 @@ console.log(organizations);
               showToast("Failed to create job", true);
             }
           }}
+          selectedOrgId={selectedOrgId} 
         />
 
         <MilestoneModal
