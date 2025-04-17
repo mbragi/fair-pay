@@ -1,8 +1,5 @@
 import { useEffect } from "react";
-import {
-  useGoogleSmartAccount,
-  usePasskeySmartAccount,
-} from "../../hooks/useSmartAccount";
+import { useGoogleSmartAccount, usePasskeySmartAccount } from "../../hooks/useSmartAccount";
 import { useAuth } from "../../context/AuthContext";
 
 interface ConnectModalProps {
@@ -11,26 +8,55 @@ interface ConnectModalProps {
 }
 
 const ConnectModal = ({ open, onClose }: ConnectModalProps) => {
-  const { connectWithGoogle, isConnecting: googleLoading, error: googleError } =
-    useGoogleSmartAccount();
-  const { connectWithPasskey, isConnecting: passkeyLoading, error: passKeyError } =
-    usePasskeySmartAccount();
-    const { isConnected, address, } = useAuth();
+  const { 
+    connectWithGoogle, 
+    isConnecting: googleLoading, 
+    error: googleError 
+  } = useGoogleSmartAccount();
   
+  const { 
+    connectWithPasskey, 
+    isConnecting: passkeyLoading, 
+    error: passKeyError 
+  } = usePasskeySmartAccount();
+  
+  const { isConnected } = useAuth();
+
+  const handleGoogleConnect = async () => {
+    try {
+      await connectWithGoogle();
+      onClose();
+    } catch (error) {
+      console.error("Google connection failed:", error);
+    }
+  };
+
+  const handlePasskeyConnect = async () => {
+    try {
+      await connectWithPasskey();
+      onClose();
+    } catch (error) {
+      console.error("Passkey connection failed:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (isConnected) {
+      onClose();
+    }
+  }, [isConnected, onClose]);
 
   useEffect(() => {
     if (googleError) {
-      console.log(googleError)
-      alert(googleError)
-
+      console.error("Google auth error:", googleError);
+      // Consider using a toast notification instead of alert
     }
+    
     if (passKeyError) {
-      console.log(passKeyError)
-      alert(passKeyError)
+      console.error("Passkey auth error:", passKeyError);
+      // Consider using a toast notification instead of alert
     }
-  }, [googleError, passKeyError])
-
-  console.log(address, isConnected)
+  }, [googleError, passKeyError]);
 
   if (!open) return null;
 
@@ -43,18 +69,18 @@ const ConnectModal = ({ open, onClose }: ConnectModalProps) => {
 
         {/* Google Button */}
         <button
-          onClick={connectWithGoogle}
+          onClick={handleGoogleConnect}
           disabled={googleLoading}
-          className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+          className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50"
         >
           {googleLoading ? "Connecting..." : "Continue with Google"}
         </button>
 
         {/* Passkey Button */}
         <button
-          onClick={connectWithPasskey}
+          onClick={handlePasskeyConnect}
           disabled={passkeyLoading}
-          className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium"
+          className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium disabled:opacity-50"
         >
           {passkeyLoading ? "Connecting..." : "Continue with Passkey"}
         </button>
