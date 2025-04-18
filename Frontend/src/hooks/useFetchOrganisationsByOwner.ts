@@ -4,19 +4,11 @@ import { getContract } from "thirdweb";
 import { FairPayCore } from "../abis/addresses";
 import { client } from "../client";
 import { baseSepolia } from "thirdweb/chains";
-import { type Abi } from "thirdweb";
-
-interface Organization {
-  id: number;
-  name: string;
-  description: string;
-  isActive: boolean;
-  createdAt: number;
-}
 
 export const useFetchOrganizationsByOwner = (owner: string) => {
 
- const organizationManagerAbi: Abi = [
+ // eslint-disable-next-line @typescript-eslint/no-explicit-any
+ const organizationManagerAbi: any = [
     {
       "type": "constructor",
       "inputs": [
@@ -399,5 +391,6 @@ export const useFetchOrganizationsByOwner = (owner: string) => {
     data: organizations,
     isLoading,
     refetch,
+    error,
   };
 };

@@ -2,7 +2,7 @@ import { useSendTransaction } from "thirdweb/react";
 import { prepareContractCall, getContract } from "thirdweb";
 import { client } from "../client";
 import { baseSepolia } from "thirdweb/chains";
-import { parseEther, formatUnits } from 'ethers/lib/utils';
+import { parseEther } from 'ethers/lib/utils';
 import { FairPayCore } from "../abis/addresses";
 
 export const useCreateJob = () => {

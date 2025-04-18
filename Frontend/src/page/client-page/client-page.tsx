@@ -90,7 +90,9 @@ const ClientPage: React.FC = () => {
             onCreateClick={() => setShowCreateJobModal(true)}
             onSelectJob={(job) => {
               setSelectedJob(job);
-              setShowJobDetailsModal(true);
+              // setShowJobDetailsModal(true);//
+              setShowMilestonesModal(true);
+
             }}
             onBack={() => setSelectedOrgId(null)}
           />

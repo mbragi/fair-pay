@@ -1,18 +1,18 @@
-// useFetchOrganizationJobs.ts
-import { useEffect,useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useEffect, useState, useMemo } from "react";
 import { useReadContract,  } from "thirdweb/react";
 import { readContract } from "thirdweb"
-import { OrganizationManager, WorkerDashboard } from "../abis/addresses";
+import { OrganizationManager } from "../abis/addresses";
 import { client } from "../client";
 import { baseSepolia } from "thirdweb/chains";
 import { getContract } from "thirdweb";
-import { type Abi } from "thirdweb";
+import { Job } from "../types/generated";
 
 export const useFetchOrganizationJobs = (orgId: number) => {
-  const [jobsData, setJobsData] = useState<Array<any>>([]);
+  const [jobsData, setJobsData] = useState<Array<Job>>([]);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   
-  const organizationManagerAbi: Abi = [
+  const organizationManagerAbi: any = [
     { type: "constructor", inputs: [], stateMutability: "nonpayable" },
     {
       type: "function",
@@ -242,14 +242,14 @@ export const useFetchOrganizationJobs = (orgId: number) => {
     },
   ];
 
-  const jobEscrowAbi: Abi =   [
-    {
-      "type": "function",
-      "name": "DISPUTE_PERIOD",
-      "inputs": [],
-      "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
-      "stateMutability": "view"
-    },
+  const jobEscrowAbi = useMemo(() => [
+      {
+        "type": "function",
+        "name": "DISPUTE_PERIOD",
+        "inputs": [],
+        "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+        "stateMutability": "view"
+      },
     {
       "type": "function",
       "name": "approveMilestone",
@@ -804,7 +804,7 @@ export const useFetchOrganizationJobs = (orgId: number) => {
     },
     { "type": "error", "name": "TooEarly", "inputs": [] },
     { "type": "error", "name": "WorkerAlreadyAssigned", "inputs": [] }
-  ]
+  ],[]);
   const contract = getContract({
     address: OrganizationManager,
     chain: baseSepolia,
@@ -840,7 +840,7 @@ export const useFetchOrganizationJobs = (orgId: number) => {
             address,
             chain: baseSepolia,
             client,
-            abi: jobEscrowAbi,
+            abi: jobEscrowAbi as any,
           });
     
           const details = await readContract({
@@ -872,7 +872,7 @@ export const useFetchOrganizationJobs = (orgId: number) => {
     };
     
     fetchJobDetails();
-  }, [jobAddresses]);
+  }, [jobAddresses, jobEscrowAbi]);
 
 
 

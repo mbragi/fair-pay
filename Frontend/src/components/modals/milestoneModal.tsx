@@ -2,6 +2,7 @@
 
 const MilestoneModal = ({ isOpen, job, onClose, onSave }: any) => {
  if (!isOpen || !job) return null;
+ console.log("Job in MilestoneModal:", job);
 
  return (
   <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
