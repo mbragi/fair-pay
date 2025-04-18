@@ -1,12 +1,12 @@
 // JobManagementModal.tsx
 import { useState, useEffect } from "react";
 import { formatEther } from "ethers/lib/utils";
-import { ethers } from "ethers";
 import { useSetMilestones } from "../../hooks/useCreatemilestone";
 import { useAssignWorker } from "../../hooks/useAssignWoker";
 
 interface JobManagementModalProps {
   isOpen: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   job: any;
   onClose: () => void;
   onSuccess: () => void;
@@ -201,7 +201,7 @@ const JobManagementModal = ({
               </div>
             ))}
             <button
-              onClick={()=>handleSetMilestones(job.address)}
+              onClick={()=>handleSetMilestones()}
               disabled={isSettingMilestones}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
             >

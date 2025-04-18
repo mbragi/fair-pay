@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useSendTransaction } from "thirdweb/react";
 import { prepareContractCall, getContract } from "thirdweb";
 import { client } from "../client";
 import { readContract } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
-import { parseEther, formatUnits } from 'ethers/lib/utils';
-import { jobEscrowAbi } from "../abis/jobEscrowAbi";
+import { parseEther } from 'ethers/lib/utils';
+import jobEscrowAbi from "../abis/JobEscrow.json";
 
 
 export const useSetMilestones = () => {
@@ -23,7 +24,7 @@ export const useSetMilestones = () => {
             address: jobAddress,
             chain: baseSepolia,
             client,
-            abi: jobEscrowAbi,
+            abi: jobEscrowAbi.abi as any,
         });
 
         // Convert to the format expected by the contract
