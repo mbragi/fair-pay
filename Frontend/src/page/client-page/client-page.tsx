@@ -141,7 +141,6 @@ const ClientPage: React.FC = () => {
           isOpen={showMilestonesModal}
           job={selectedJob}
           onClose={() => setShowMilestonesModal(false)}
-          onSave={() => showToast("Milestones saved successfully")}
         />
 
         <JobDetailsModal
