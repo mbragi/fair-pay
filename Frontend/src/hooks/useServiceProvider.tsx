@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { baseSepolia } from "thirdweb/chains";
 import { getContract, prepareContractCall, readContract } from "thirdweb";
@@ -6,25 +7,8 @@ import { FairPayCore } from "../abis/addresses";
 import { ethers } from "ethers";
 import { useAuth } from "../context/AuthContext";
 import { client } from "../client";
+import { Job, Milestone } from "../types/generated";
 
-export interface Job {
-  address: string;
-  employer: string;
-  title: string;
-  description: string;
-  totalPayment: string;
-  status: 'Created' | 'InProgress' | 'Completed' | 'Cancelled';
-  currentMilestone: number;
-  milestoneCount: number;
-}
-
-export interface Milestone {
-  title: string;
-  description: string;
-  amount: string;
-  deadline: string;
-  status: 'NotStarted' | 'InProgress' | 'Completed' | 'Disputed';
-}
 
 const contract = getContract({
   address:  FairPayCore,
@@ -43,7 +27,7 @@ export const useServiceProvider = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJob, setSelectedJob] = useState<string | null>(null);
   const [jobDetails, setJobDetails] = useState<any>(null);
-  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [milestones, setMilestones] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   const { mutateAsync: sendTx, isPending } = useSendTransaction();
@@ -88,11 +72,11 @@ export const useServiceProvider = () => {
         params: [],
       });
 
-      const jobsData = await Promise.all(
+      const jobsData: Job[] = await Promise.all(
         jobAddresses.map(async (address: string) => {
           const jobEscrow = getContract({
             address,
-            abi: JobEscrow,
+            abi: JobEscrow.abi as any,
             chain: baseSepolia,
             client,
           });
@@ -114,6 +98,7 @@ export const useServiceProvider = () => {
 
           return {
             address,
+            worker,
             employer,
             title,
             description,
@@ -121,11 +106,11 @@ export const useServiceProvider = () => {
             status: ['Created', 'InProgress', 'Completed', 'Cancelled'][status],
             currentMilestone: Number(currentMilestone),
             milestoneCount: Number(milestoneCount),
-          };
+          } as unknown as Job;
         })
       );
 
-      setJobs(jobsData);
+      setJobs(jobsData as Job[]);
       if (jobsData.length > 0 && !selectedJob) {
         setSelectedJob(jobsData[0].address);
       }
@@ -137,6 +122,12 @@ export const useServiceProvider = () => {
   };
 
   const fetchJobDetails = async (jobAddress: string) => {
+    const jobEscrow = getContract({
+      address: jobAddress,
+      abi: JobEscrow.abi as any,
+      chain: baseSepolia,
+      client,
+    });
     setLoading(true);
     try {
       
@@ -151,7 +142,7 @@ export const useServiceProvider = () => {
         milestoneCount,
         currentMilestone,
       ] = await readContract({
-        contract,
+        contract: jobEscrow,
         method: "function getJobDetails() returns (address,address,string,string,uint256,uint8,uint256,uint256)",
         params: [],
       });
@@ -164,7 +155,7 @@ export const useServiceProvider = () => {
         milestoneDeadlines,
         milestoneStatuses,
       ] = await readContract({
-        contract,
+        contract: jobEscrow,
         method: "function getAllMilestones() returns (string[],string[],uint256[],uint256[],uint8[])",
         params: [],
       });
@@ -174,7 +165,7 @@ export const useServiceProvider = () => {
         description: milestoneDescriptions[i],
         amount: ethers.utils.formatEther(milestoneAmounts[i]),
         deadline: new Date(Number(milestoneDeadlines[i]) * 1000).toISOString().split('T')[0],
-        status: ['NotStarted', 'InProgress', 'Completed', 'Disputed'][milestoneStatuses[i]] as Milestone['status'],
+        status: ['NotStarted', 'InProgress', 'Completed', 'Disputed'][Number(milestoneStatuses[i])] as unknown as Milestone['status'],
       }));
 
       setJobDetails({
@@ -201,6 +192,7 @@ export const useServiceProvider = () => {
     if (isConnected && address) {
       fetchAssignedJobs();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, address]);
 
   useEffect(() => {
