@@ -822,10 +822,6 @@ export const useFetchOrganizationJobs = (orgId: number) => {
   
 
   
-  
- 
-  
-
   useEffect(() => {
     const fetchJobDetails = async () => {
       if (!jobAddresses || jobAddresses.length === 0) {

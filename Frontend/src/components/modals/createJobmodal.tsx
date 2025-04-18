@@ -12,7 +12,7 @@ interface Props {
   milestoneCount: number;
   tokenAddress: string;
  }) => Promise<void> | void;
- selectedOrgId: number | null; // Add this
+ selectedOrgId: number | null; 
 }
 
 const CreateJobModal: React.FC<Props> = ({
@@ -46,7 +46,7 @@ const CreateJobModal: React.FC<Props> = ({
     tokenAddress,
    });
 
-   // Reset form and close modal after successful create
+   
    setTitle("");
    setDescription("");
    setPayment("");

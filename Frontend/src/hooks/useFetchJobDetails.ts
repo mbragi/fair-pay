@@ -12,7 +12,7 @@ export const useFetchJobDetails = (jobAddress: string) => {
 
   const { data, isLoading } = useReadContract({
     contract,
-    method: "function getJobDetails()", // Replace with your actual method
+    method: "function getJobDetails()",
   });
 
   return { data, isLoading };
