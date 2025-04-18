@@ -37,11 +37,13 @@ const ClientPage: React.FC = () => {
     isPending: orgPending,
   } = useCreateOrganization();
 
+
+
   const {
     data:jobs,
     refetch: refetchJobs,
     isLoading: jobsPending
-  } = useFetchOrganizationJobs(selectedOrgId ?? 0);
+  } = useFetchOrganizationJobs(selectedOrgId ?? 1);
 
   const {
     createJob,
@@ -53,7 +55,6 @@ const ClientPage: React.FC = () => {
     setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
   };
 
-  console.log(organizations)
 
   if (!isConnected || !address) {
     return (
@@ -117,7 +118,10 @@ const ClientPage: React.FC = () => {
           onClose={() => setShowCreateJobModal(false)}
           onCreate={async (jobData) => {
             try {
-              const job = await createJob(1, jobData.title, jobData.description, jobData.payment, jobData.milestoneCount, jobData.tokenAddress);
+              if (jobData.orgId === null) {
+                throw new Error("Organization ID cannot be null");
+              }
+              const job = await createJob(jobData.orgId, jobData.title, jobData.description, jobData.payment, jobData.milestoneCount, jobData.tokenAddress);
               setSelectedJob(job);
               setShowCreateJobModal(false);
               setShowMilestonesModal(true);

@@ -1,7 +1,7 @@
 import { useReadContract } from "thirdweb/react";
 import React from "react";
 import { getContract } from "thirdweb";
-import { OrganizationManager } from "../abis/addresses";
+import { FairPayCore } from "../abis/addresses";
 import { client } from "../client";
 import { baseSepolia } from "thirdweb/chains";
 import { type Abi } from "thirdweb";
@@ -360,7 +360,7 @@ export const useFetchOrganizationsByOwner = (owner: string) => {
     }
   ]
   const contract = getContract({
-    address: OrganizationManager,
+    address: FairPayCore,
     chain: baseSepolia,
     client,
     abi:organizationManagerAbi
