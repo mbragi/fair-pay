@@ -1,56 +1,51 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import ConnectModal from "../modal/connectModal";
+import { useEffect, useState } from "react";
+import ConnectModal from "../modals/connectModal";
+import { useAuth } from "../../context/AuthContext";
+import AccountDetails from "../AccountDetails";
 
 const Header = () => {
-  const [showModal, setShowModal] = useState(false);
+  const { isConnected, address } = useAuth();
+  const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (address) setModalOpen(false);
+  }, [address]);
 
   return (
-    <header className="bg-white shadow-md">
-      <nav className="flex items-center justify-between py-6 px-4 sm:px-6 lg:px-8 border-b">
-        {/* Logo */}
-        <div className="flex items-center">
-          <Link to="/" className="text-2xl font-bold text-blue-900">
-            Fair<span className="text-blue-600">Pay</span>
-          </Link>
-        </div>
+    <div className=" bg-white  fixed inset-x-0 z-50 md:h-20  py-4 px-6 shadow-md border-b">
+      <header className=" flex justify-between items-center">
+        <Link to="/" className="text-2xl font-bold text-blue-700">
+          Fair<span className="text-indigo-600">Pay</span>
+        </Link>
 
-        {/* Navigation Links */}
-        <div className="hidden md:flex items-center space-x-8">
-          <a
-            href="#features"
-            className="text-gray-600 hover:text-blue-600 font-medium"
-          >
+        <nav className="space-x-6 hidden md:flex">
+          <Link to="/features" className="hover:text-blue-600">
             Features
-          </a>
-          <Link
-            to="/howitworks"
-            className="text-gray-600 hover:text-blue-600 font-medium"
-          >
+          </Link>
+          <Link to="/howitworks" className="hover:text-blue-600">
             How it Works
           </Link>
-          <a
-            href="#testimonials"
-            className="text-gray-600 hover:text-blue-600 font-medium"
-          >
-            Testimonials
-          </a>
+        </nav>
+
+        <div className="flex items-center  ">
+          {isConnected || address ? (
+            <div className="">
+              <AccountDetails />
+            </div>
+          ) : (
+            <button
+              onClick={() => setModalOpen(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Get Started
+            </button>
+          )}
         </div>
 
-        {/* Get Started Button */}
-        <div className="flex items-center space-x-4">
-          <button
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow hover:bg-blue-700 transition"
-            onClick={() => setShowModal(true)}
-          >
-            Get Started
-          </button>
-        </div>
-      </nav>
-
-      {/* Connect Modal */}
-      <ConnectModal open={showModal} onClose={() => setShowModal(false)} />
-    </header>
+        <ConnectModal open={modalOpen} onClose={() => setModalOpen(false)} />
+      </header>
+    </div>
   );
 };
 
