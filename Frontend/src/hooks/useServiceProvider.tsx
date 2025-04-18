@@ -8,18 +8,21 @@ import { ethers } from "ethers";
 import { useAuth } from "../context/AuthContext";
 import { client } from "../client";
 import { Job, Milestone } from "../types/generated";
+import FairPay from "../abis/FairPayCore.json"
 
 
 const contract = getContract({
-  address:  FairPayCore,
+  address: FairPayCore,
   chain: baseSepolia,
   client,
+  abi: FairPay.abi as any,
 });
 
 const JobEscrow = getContract({
   address:  FairPayCore,
   chain: baseSepolia,
   client,
+
 });
 
 export const useServiceProvider = () => {
@@ -68,9 +71,11 @@ export const useServiceProvider = () => {
     try {
       const jobAddresses = await readContract({
         contract,
-        method: "function getMyJobs() returns (address[])",
-        params: [],
+        method: "function getWorkerJobs(address) returns (address[])",
+        params: [address ?? "0x0"],
       });
+
+      console.log("Assigned jobs:", jobAddresses);
 
       const jobsData: Job[] = await Promise.all(
         jobAddresses.map(async (address: string) => {
