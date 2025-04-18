@@ -2,8 +2,7 @@ import { useSendTransaction } from "thirdweb/react";
 import { prepareContractCall, getContract } from "thirdweb";
 import { client } from "../client";
 import { baseSepolia } from "thirdweb/chains";
-import { parseEther, formatUnits } from 'ethers/lib/utils';
-import { FairPayCore } from "../abis/addresses";
+import jobEscrowAbi from "../abis/JobEscrow.json"; // Make sure you have this ABI
 
 export const useAssignWorker = () => {
     const { mutateAsync, isPending, error } = useSendTransaction();
@@ -13,7 +12,8 @@ export const useAssignWorker = () => {
             address: jobAddress,
             chain: baseSepolia,
             client,
-            abi: jobEscrowAbi, // Make sure you have this ABI
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            abi: jobEscrowAbi.abi as any, // Make sure you have this ABI
         });
 
         const tx = prepareContractCall({

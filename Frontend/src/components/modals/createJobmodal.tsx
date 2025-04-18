@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useCreateJob } from "../../hooks/useCreateJob";
 
 interface Props {
  isOpen: boolean;
@@ -26,7 +27,10 @@ const CreateJobModal: React.FC<Props> = ({
  const [milestoneCount, setMilestoneCount] = useState(1);
  const [tokenAddress, setTokenAddress] = useState("");
  const [isSubmitting, setIsSubmitting] = useState(false);
-
+ const { error } = useCreateJob();
+ if (error) {
+  console.error("Error creating job:", error);
+ }
  if (!isOpen) return null;
  
  const handleSubmit = async (e: React.FormEvent) => {
@@ -131,9 +135,37 @@ const CreateJobModal: React.FC<Props> = ({
       <button
        type="submit"
        disabled={isSubmitting}
-       className={`px-4 py-2 rounded text-white ${isSubmitting ? 'bg-gray-400' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+       className={`px-4 py-2 rounded text-white ${isSubmitting
+        ? "bg-indigo-400 cursor-not-allowed"
+        : "bg-indigo-600 hover:bg-indigo-700"
+        }`}
       >
-       {isSubmitting ? "Creating..." : "Continue"}
+       {isSubmitting ? (
+        <span className="flex items-center">
+         <svg
+          className="animate-spin h-4 w-4 mr-2 text-white"
+          viewBox="0 0 24 24"
+          fill="none"
+         >
+          <circle
+           className="opacity-25"
+           cx="12"
+           cy="12"
+           r="10"
+           stroke="currentColor"
+           strokeWidth="4"
+          ></circle>
+          <path
+           className="opacity-75"
+           fill="currentColor"
+           d="M4 12a8 8 0 018-8v8H4z"
+          ></path>
+         </svg>
+         Creating...
+        </span>
+       ) : (
+        "Create"
+       )}
       </button>
      </div>
     </form>

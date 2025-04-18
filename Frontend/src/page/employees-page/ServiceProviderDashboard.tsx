@@ -1,51 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 import { Clock, CheckCircle, AlertTriangle, XCircle, FileText } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useServiceProvider } from "../../hooks/useServiceProvider";
 
-interface Job {
-  address: `0x${string}`;
-  employer: string;
-  worker: string;
-  title: string;
-  totalPayment: string;
-  status: string;
-  currentMilestone: number;
-  milestoneCount: number;
-}
-
-interface JobDetails {
-  employer: string;
-  worker: string;
-  title: string;
-  description: string;
-  totalPayment: string;
-  status: string;
-  currentMilestone: number;
-  milestoneCount: number;
-}
-
-interface Milestone {
-  title: string;
-  description: string;
-  amount: string;
-  deadline: string;
-  status: string;
-}
-
 
 const ServiceProviderDashboard = () => {
-  const { address: account, isConnected } = useAuth();
+  const { address: account } = useAuth();
   
   const {
     jobs,
-    selectedJob,
-    setSelectedJob,
     jobDetails,
     milestones,
     loading,
-    isPending,
     confirmJob,
     submitMilestone,
   } = useServiceProvider();
@@ -54,92 +21,22 @@ const ServiceProviderDashboard = () => {
   const [activeJob, setActiveJob] = useState<`0x${string}` | null>(null);
  
 
- 
 
 
-  useEffect(() => {
-    if (activeJob) {
-      loadJobDetails();
-    }
-  }, [activeJob]);
-
-  const loadJobDetails = async () => {
-    if (!activeJob) return;
-    
-    try {
-      setLoading(true);
-      
-      // Mock job details for the demo
-      const mockJobDetails: JobDetails = {
-        employer: '0xabcdef123456789abcdef123456789abcdef1234',
-        worker: account as string,
-        title: 'Website Redesign for TechCorp',
-        description: 'Complete redesign of TechCorp\'s corporate website. The project includes UI/UX design, frontend development, and integration with their existing CMS system.',
-        totalPayment: '2.5',
-        status: 'InProgress',
-        currentMilestone: 1,
-        milestoneCount: 4
-      };
-      
-      const mockMilestones: Milestone[] = [
-        {
-          title: 'UI/UX Design',
-          description: 'Create wireframes and design mockups for all pages',
-          amount: '0.5',
-          deadline: '2025-04-20',
-          status: 'Completed'
-        },
-        {
-          title: 'Frontend Development',
-          description: 'Implement the approved designs with responsive layout',
-          amount: '0.8',
-          deadline: '2025-05-05',
-          status: 'InProgress'
-        },
-        {
-          title: 'CMS Integration',
-          description: 'Connect the frontend with the existing content management system',
-          amount: '0.7',
-          deadline: '2025-05-20',
-          status: 'NotStarted'
-        },
-        {
-          title: 'Testing and Launch',
-          description: 'Perform cross-browser testing and deploy to production',
-          amount: '0.5',
-          deadline: '2025-06-01',
-          status: 'NotStarted'
-        }
-      ];
-      
-      setJobDetails(mockJobDetails);
-      setMilestones(mockMilestones);
-      setLoading(false);
-    } catch (err) {
-      console.error('Error loading job details:', err);
-      setError('Failed to load job details');
-      setLoading(false);
-    }
-  };
 
 
   const autoResolveDispute = async (milestoneIndex: number) => {
     if (!activeJob) return;
     
     try {
-      setLoading(true);
       // Mock resolution for demo
       const updatedMilestones = [...milestones];
       updatedMilestones[milestoneIndex] = {
         ...updatedMilestones[milestoneIndex],
         status: 'Completed'
       };
-      setMilestones(updatedMilestones);
-      setLoading(false);
     } catch (err) {
       console.error('Error resolving dispute:', err);
-      setError('Failed to resolve dispute');
-      setLoading(false);
     }
   };
 
@@ -217,7 +114,7 @@ const ServiceProviderDashboard = () => {
                   >
                     <div className="flex items-center justify-between">
                       <h3 className="font-medium text-gray-800">{job.title}</h3>
-                      {getStatusIcon(job.status)}
+                      {getStatusIcon(job.status.toString())}
                     </div>
                     <div className="mt-2">
                       <div className="text-sm text-gray-600">
