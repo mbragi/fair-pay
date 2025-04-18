@@ -4,61 +4,71 @@ import { getContract } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
 import { client } from "../client";
 import { useSendTransaction } from "thirdweb/react";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const jobEscrowAbi:any = [
-  {
-    type: "function",
-    name: "setMilestones",
-    inputs: [
-      { name: "_indices", type: "uint256[]", internalType: "uint256[]" },
-      { name: "_titles", type: "string[]", internalType: "string[]" },
-      { name: "_description", type: "string[]", internalType: "string[]" },
-      { name: "_amounts", type: "uint256[]", internalType: "uint256[]" },
-      { name: "_deadlines", type: "uint256[]", internalType: "uint256[]" },
-    ],
-    outputs: [],
-    stateMutability: "nonpayable",
-  },
-];
+import jobEscrowAbi from "../abis/JobEscrow.json";
 
 export const useSetMilestones = (jobAddress: string) => {
- const { mutateAsync: sendTx, isPending , error} = useSendTransaction();
+  const { mutateAsync: sendTx, isPending, error } = useSendTransaction();
+
   const setMilestones = async (
     titles: string[],
     descriptions: string[],
     amounts: string[],
     deadlines: string[]
   ) => {
-      const indices = titles.map((_, i) => BigInt(i));
-      const convertedAmounts = amounts.map((a) =>
-        BigInt(Math.floor(parseFloat(a) * 1e18))
+    // Basic validation
+    const count = titles.length;
+    if (
+      !count ||
+      descriptions.length !== count ||
+      amounts.length !== count ||
+      deadlines.length !== count
+    ) {
+      throw new Error(
+        "All milestone arrays must be non-empty and of equal length."
       );
-      const convertedDeadlines = deadlines.map((d) =>
-        BigInt(Math.floor(new Date(d).getTime() / 1000))
-      );
+    }
 
-      const contract = getContract({
-        address: jobAddress,
-        abi: jobEscrowAbi,
-        chain: baseSepolia,
-        client,
-      });
+    // Prepare indices
+    const indices = titles.map((_, i) => BigInt(i));
 
-      const tx = prepareContractCall({
-        contract,
-        method: "setMilestones",
-        params: [
-          indices,
-          titles,
-          descriptions,
-          convertedAmounts,
-          convertedDeadlines,
-        ],
-      });
+    // Safely convert amounts to BigInt (wei)
+    const convertedAmounts = amounts.map((a) => {
+      const num = parseFloat(a);
+      const valid = Number.isFinite(num) ? num : 0;
+      return BigInt(Math.floor(valid * 1e18));
+    });
 
-      await sendTx(tx);
+    // Safely convert deadlines to BigInt (unix seconds)
+    const convertedDeadlines = deadlines.map((d) => {
+      const ts = new Date(d).getTime();
+      const validTs = Number.isFinite(ts) ? ts : 0;
+      return BigInt(Math.floor(validTs / 1000));
+    });
+
+    // Get contract instance
+    const contract = getContract({
+      address: jobAddress,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      abi: jobEscrowAbi.abi as any,
+      chain: baseSepolia,
+      client,
+    });
+
+    // Prepare and send transaction
+    const tx = prepareContractCall({
+      contract,
+      method: "setMilestones",
+      params: [
+        indices,
+        titles,
+        descriptions,
+        convertedAmounts,
+        convertedDeadlines,
+      ],
+    });
+
+    await sendTx(tx);
   };
 
-  return { setMilestones, isPending, error};
+  return { setMilestones, isPending, error };
 };

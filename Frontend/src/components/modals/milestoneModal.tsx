@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useSetMilestones } from "../../hooks/useSetMilestone";
+import { toast } from "sonner";
 
 interface Job {
   address: string;
-  title: string;
+ title: string;
+ milestoneCount: number;
 }
 
 interface MilestoneModalProps {
@@ -13,11 +15,11 @@ interface MilestoneModalProps {
 }
 
 const MilestoneModal = ({ isOpen, job, onClose }: MilestoneModalProps) => {
+ console.log("Job in MilestoneModal:", job);
  const [milestones, setMilestones] = useState([
   { title: "", description: "", amount: "", deadline: "" },
  ]);
- const [isSubmitting, setIsSubmitting] = useState(false);
- const { setMilestones: submitMilestones } = useSetMilestones(job?.address ?? "0x");
+ const { setMilestones: submitMilestones, error, isPending } = useSetMilestones(job?.address ?? "0x");
 
  if (!isOpen || !job) return null;
 
@@ -28,6 +30,10 @@ const MilestoneModal = ({ isOpen, job, onClose }: MilestoneModalProps) => {
  };
 
  const addMilestone = () => {
+  if (milestones.length >= job.milestoneCount) {
+   toast.error("You can only add up to " + job.milestoneCount + " milestones.");
+   return;
+  }
   setMilestones([...milestones, { title: "", description: "", amount: "", deadline: "" }]);
  };
 
@@ -35,22 +41,20 @@ const MilestoneModal = ({ isOpen, job, onClose }: MilestoneModalProps) => {
   setMilestones(milestones.filter((_, i) => i !== index));
  };
 
- const handleSubmit = async () => {
-  setIsSubmitting(true);
-  try {
-   const titles = milestones.map((m) => m.title);
-   const descriptions = milestones.map((m) => m.description);
-   const amounts = milestones.map((m) => m.amount);
-   const deadlines = milestones.map((m) => m.deadline);
+ if (error) {
+  console.error("Error setting milestones:", error);
+  toast.error("Error setting milestones: " + error.message);
+ }
 
-   await submitMilestones(titles, descriptions, amounts, deadlines);
-   onClose();
-  } catch (err) {
-   console.error("Failed to set milestones:", err);
-  } finally {
-   setIsSubmitting(false);
-  }
- };
+ const handleSubmit = async () => {
+  const titles = milestones.map((m) => m.title);
+  const descriptions = milestones.map((m) => m.description);
+  const amounts = milestones.map((m) => m.amount);
+  const deadlines = milestones.map((m) => m.deadline);
+
+  await submitMilestones(titles, descriptions, amounts, deadlines);
+  onClose();
+ }
 
  return (
   <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
@@ -115,11 +119,11 @@ const MilestoneModal = ({ isOpen, job, onClose }: MilestoneModalProps) => {
      </button>
      <button
       onClick={handleSubmit}
-      disabled={isSubmitting}
-      className={`px-4 py-2 rounded text-white ${isSubmitting ? "bg-indigo-400" : "bg-indigo-600 hover:bg-indigo-700"
+      disabled={isPending}
+      className={`px-4 py-2 rounded text-white ${isPending ? "bg-indigo-400" : "bg-indigo-600 hover:bg-indigo-700"
        }`}
      >
-      {isSubmitting ? "Submitting..." : "Save Milestones"}
+      {isPending ? "Submitting..." : "Save Milestones"}
      </button>
     </div>
    </div>

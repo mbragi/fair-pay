@@ -12,12 +12,13 @@ import CreateJobModal from "../../components/modals/createJobmodal";
 import JobDetailsModal from "../../components/modals/jobdetailsModal";
 import MilestoneModal from "../../components/modals/milestoneModal";
 import Toast from "../../components/common/Toast";
+import { Job } from "../../types/generated";
 
 const ClientPage: React.FC = () => {
   const { address, isConnected } = useAuth();
 
   const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
-  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
   const [showCreateJobModal, setShowCreateJobModal] = useState(false);
   const [showJobDetailsModal, setShowJobDetailsModal] = useState(false);
@@ -26,10 +27,10 @@ const ClientPage: React.FC = () => {
 
 
   const {
-  data: organizations,
-  isLoading: orgLoading,
-  refetch: refetchOrganizations,
-} = useFetchOrganizationsByOwner(address ?? "");
+    data: organizations,
+    isLoading: orgLoading,
+    refetch: refetchOrganizations,
+  } = useFetchOrganizationsByOwner(address ?? "");
 
 
   const {
@@ -40,7 +41,7 @@ const ClientPage: React.FC = () => {
 
 
   const {
-    data:jobs,
+    data: jobs,
     refetch: refetchJobs,
     isLoading: jobsPending
   } = useFetchOrganizationJobs(selectedOrgId ?? 1);
@@ -90,10 +91,13 @@ const ClientPage: React.FC = () => {
             onCreateClick={() => setShowCreateJobModal(true)}
             onSelectJob={(job) => {
               setSelectedJob(job);
-              // setShowJobDetailsModal(true);//
-              setShowMilestonesModal(true);
-
+              setShowJobDetailsModal(true);//
             }}
+            onCreateMilestones={(job: Job) => {
+              setSelectedJob(job);
+              setShowMilestonesModal(true)
+            }
+            }
             onBack={() => setSelectedOrgId(null)}
           />
         )}
@@ -123,10 +127,8 @@ const ClientPage: React.FC = () => {
               if (jobData.orgId === null) {
                 throw new Error("Organization ID cannot be null");
               }
-              const job = await createJob(jobData.orgId, jobData.title, jobData.description, jobData.payment, jobData.milestoneCount, jobData.tokenAddress);
-              setSelectedJob(job);
+              await createJob(jobData.orgId, jobData.title, jobData.description, jobData.payment, jobData.milestoneCount, jobData.tokenAddress);
               setShowCreateJobModal(false);
-              setShowMilestonesModal(true);
               showToast("Job created successfully");
               await refetchJobs();
             } catch (e) {
@@ -134,7 +136,7 @@ const ClientPage: React.FC = () => {
               showToast("Failed to create job", true);
             }
           }}
-          selectedOrgId={selectedOrgId} 
+          selectedOrgId={selectedOrgId}
         />
 
         <MilestoneModal
@@ -145,7 +147,7 @@ const ClientPage: React.FC = () => {
 
         <JobDetailsModal
           isOpen={showJobDetailsModal}
-          job={selectedJob}
+          job={selectedJob as Job}
           onClose={() => setShowJobDetailsModal(false)}
         />
 

@@ -12,7 +12,7 @@ export const useCreateJob = () => {
     client,
   });
 
-  const { mutateAsync, isPending, error } = useSendTransaction();
+  const { mutateAsync, isPending, error, data } = useSendTransaction();
 
   const createJob = async (
     orgId: number,
@@ -38,5 +38,5 @@ export const useCreateJob = () => {
     return await mutateAsync(tx);
   };
 
-  return { createJob, isPending, error };
+  return { createJob, isPending, error, data };
 };
