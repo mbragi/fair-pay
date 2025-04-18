@@ -10,7 +10,6 @@ import JobList from "../../components/lists/jobList";
 import CreateOrganizationModal from "../../components/modals/organizationModal";
 import CreateJobModal from "../../components/modals/createJobmodal";
 import JobManagementModal from "../../components/modals/JobManagementModal";
-import MilestoneModal from "../../components/modals/milestoneModal";
 import Toast from "../../components/common/Toast";
 
 const ClientPage: React.FC = () => {
@@ -21,7 +20,7 @@ const ClientPage: React.FC = () => {
   const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
   const [showCreateJobModal, setShowCreateJobModal] = useState(false);
   const [showJobDetailsModal, setShowJobDetailsModal] = useState(false);
-  const [showMilestonesModal, setShowMilestonesModal] = useState(false);
+  
   const [toast, setToast] = useState({
     message: "",
     isError: false,
@@ -140,18 +139,9 @@ const ClientPage: React.FC = () => {
           selectedOrgId={selectedOrgId}
         />
 
-        <MilestoneModal
-          isOpen={showMilestonesModal}
-          job={selectedJob}
-          onClose={() => setShowMilestonesModal(false)}
-          onSuccess={() => {
-            showToast("Operation completed successfully");
-            refetchJobs(); 
-          }}
-        />
-
-  
         
+
+
         <JobManagementModal
         isOpen={showJobDetailsModal}
         job={selectedJob}

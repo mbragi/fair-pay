@@ -44,19 +44,35 @@ const JobManagementModal = ({
 
   const handleSetMilestones = async () => {
     try {
-      await setContractMilestones(job.address, {
-        indices: milestones.map((_, i) => i),
-        titles: milestones.map(m => m.title),
-        descriptions: milestones.map(m => m.description),
-        amounts: milestones.map(m => m.amount),
-        deadlines: milestones.map(m => m.deadline)
-      });
-      onSuccess();
-      onClose();
+        
+        const isValid = milestones.every(m => 
+            m.title && m.description && m.amount && m.deadline
+        );
+        
+        if (!isValid) {
+            throw new Error("Please fill all fields for all milestones");
+        }
+
+        // Calculate total amount from milestones
+        const totalAmount = milestones.reduce((sum, m) => {
+            return sum + parseFloat(m.amount || "0");
+        }, 0);
+
+        // Compare with job's total payment (convert from wei to ETH)
+        const jobTotalEth = parseFloat(formatEther(job.totalPayment.toString()));
+        
+        if (Math.abs(totalAmount - jobTotalEth) > 0.0001) { 
+            throw new Error(`Total milestones amount (${totalAmount} ETH) must equal job's total payment (${jobTotalEth} ETH)`);
+        }
+
+        await setContractMilestones(job.address, milestones);
+        onSuccess();
+        onClose();
     } catch (error) {
-      console.error("Failed to set milestones:", error);
+        console.error("Failed to set milestones:", error);
+        // Show error to user (you might want to add a toast/alert here)
     }
-  };
+};
 
   const handleAssignWorker = async () => {
     try {
@@ -185,7 +201,7 @@ const JobManagementModal = ({
               </div>
             ))}
             <button
-              onClick={handleSetMilestones}
+              onClick={()=>handleSetMilestones(job.address)}
               disabled={isSettingMilestones}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
             >
