@@ -1,7 +1,11 @@
 // JobManagementModal.tsx
 import { useState, useEffect } from "react";
 import { formatEther } from "ethers/lib/utils";
+import { readContract, getContract } from "thirdweb";
 import { ethers } from "ethers";
+import { jobEscrowAbi } from "../../abis/jobEscrowAbi";
+import { client } from "../../client";
+import { baseSepolia } from "thirdweb/chains";
 import { useSetMilestones } from "../../hooks/useCreatemilestone";
 import { useAssignWorker } from "../../hooks/useAssignWoker";
 
@@ -74,15 +78,48 @@ const JobManagementModal = ({
     }
 };
 
-  const handleAssignWorker = async () => {
+const handleAssignWorker = async () => {
     try {
-      await assignWorker(job.address, workerAddress);
-      onSuccess();
-      onClose();
+        // Basic validation
+        if (!workerAddress) {
+            throw new Error("Worker address is required");
+        }
+        
+        if (!ethers.utils.isAddress(workerAddress)) {
+            throw new Error("Invalid Ethereum address");
+        }
+
+        // Check if job is in correct state (optional)
+        const jobDetails = await readContract({
+            contract: getContract({
+                address: job.address,
+                chain: baseSepolia,
+                client,
+                abi: jobEscrowAbi,
+            }),
+            method: "getJobDetails",
+        });
+
+        const jobStatus = jobDetails[5]; // status is at index 5
+        if (jobStatus !== 0) { // 0 = Created
+            throw new Error("Worker can only be assigned to jobs in 'Created' status");
+        }
+
+        // Check if worker is already assigned (optional)
+        const currentWorker = jobDetails[1]; // worker is at index 1
+        if (currentWorker !== ethers.constants.AddressZero) {
+            throw new Error("Worker already assigned to this job");
+        }
+
+        await assignWorker(job.address, workerAddress);
+        onSuccess();
+        onClose();
     } catch (error) {
-      console.error("Failed to assign worker:", error);
+        console.error("Failed to assign worker:", error);
+        // Show error to user
+        setError(error instanceof Error ? error.message : "Failed to assign worker");
     }
-  };
+};
 
   if (!isOpen || !job) return null;
 
@@ -201,7 +238,7 @@ const JobManagementModal = ({
               </div>
             ))}
             <button
-              onClick={()=>handleSetMilestones(job.address)}
+              onClick={()=>handleSetMilestones()}
               disabled={isSettingMilestones}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
             >
@@ -247,3 +284,7 @@ function getStatusText(status: number): string {
 }
 
 export default JobManagementModal;
+
+function setError(arg0: string) {
+    throw new Error("Function not implemented.");
+}
