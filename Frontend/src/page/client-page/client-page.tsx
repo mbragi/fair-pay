@@ -9,8 +9,7 @@ import OrganizationList from "../../components/lists/organisationList";
 import JobList from "../../components/lists/jobList";
 import CreateOrganizationModal from "../../components/modals/organizationModal";
 import CreateJobModal from "../../components/modals/createJobmodal";
-import JobDetailsModal from "../../components/modals/jobdetailsModal";
-import MilestoneModal from "../../components/modals/milestoneModal";
+import JobManagementModal from "../../components/modals/JobManagementModal";
 import Toast from "../../components/common/Toast";
 
 const ClientPage: React.FC = () => {
@@ -21,48 +20,44 @@ const ClientPage: React.FC = () => {
   const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
   const [showCreateJobModal, setShowCreateJobModal] = useState(false);
   const [showJobDetailsModal, setShowJobDetailsModal] = useState(false);
-  const [showMilestonesModal, setShowMilestonesModal] = useState(false);
-  const [toast, setToast] = useState({ message: '', isError: false, visible: false });
-
-
-  const {
-  data: organizations,
-  isLoading: orgLoading,
-  refetch: refetchOrganizations,
-} = useFetchOrganizationsByOwner(address ?? "");
-
+  
+  const [toast, setToast] = useState({
+    message: "",
+    isError: false,
+    visible: false,
+  });
 
   const {
-    createOrganization,
-    isPending: orgPending,
-  } = useCreateOrganization();
+    data: organizations,
+    isLoading: orgLoading,
+    refetch: refetchOrganizations,
+  } = useFetchOrganizationsByOwner(address ?? "");
 
-
+  const { createOrganization, isPending: orgPending } = useCreateOrganization();
 
   const {
-    data:jobs,
+    data: jobs,
     refetch: refetchJobs,
-    isLoading: jobsPending
+    isLoading: jobsPending,
   } = useFetchOrganizationJobs(selectedOrgId ?? 1);
 
-  const {
-    createJob,
-  } = useCreateJob();
-
+  const { createJob } = useCreateJob();
 
   const showToast = (message: string, isError = false) => {
     setToast({ message, isError, visible: true });
-    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
+    setTimeout(() => setToast((prev) => ({ ...prev, visible: false })), 3000);
   };
-
 
   if (!isConnected || !address) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-indigo-50 px-4">
         <div className="bg-white shadow-md rounded-lg p-8 max-w-md text-center">
-          <h2 className="text-2xl font-bold text-indigo-700 mb-4">No Smart Account Connected</h2>
+          <h2 className="text-2xl font-bold text-indigo-700 mb-4">
+            No Smart Account Connected
+          </h2>
           <p className="text-gray-600 mb-6">
-            To use FairPay, you'll need a smart wallet account. Click Get Started.
+            To use FairPay, you'll need a smart wallet account. Click Get
+            Started.
           </p>
         </div>
       </div>
@@ -72,13 +67,15 @@ const ClientPage: React.FC = () => {
   return (
     <div className="bg-gradient-to-br from-indigo-50 to-blue-50 min-h-screen py-10 px-4">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-indigo-800 mb-8">Employer Dashboard</h1>
+        <h1 className="text-3xl font-bold text-indigo-800 mb-8">
+          Employer Dashboard
+        </h1>
 
         {!selectedOrgId ? (
           <OrganizationList
             organizations={organizations as unknown as any[]}
             onCreateClick={() => setShowCreateOrgModal(true)}
-            onSelect={id => setSelectedOrgId(id)}
+            onSelect={(id) => setSelectedOrgId(id)}
             isLoading={orgLoading}
           />
         ) : (
@@ -121,10 +118,17 @@ const ClientPage: React.FC = () => {
               if (jobData.orgId === null) {
                 throw new Error("Organization ID cannot be null");
               }
-              const job = await createJob(jobData.orgId, jobData.title, jobData.description, jobData.payment, jobData.milestoneCount, jobData.tokenAddress);
+              const job = await createJob(
+                jobData.orgId,
+                jobData.title,
+                jobData.description,
+                jobData.payment,
+                jobData.milestoneCount,
+                jobData.tokenAddress
+              );
               setSelectedJob(job);
               setShowCreateJobModal(false);
-              setShowMilestonesModal(true);
+              
               showToast("Job created successfully");
               await refetchJobs();
             } catch (e) {
@@ -132,21 +136,22 @@ const ClientPage: React.FC = () => {
               showToast("Failed to create job", true);
             }
           }}
-          selectedOrgId={selectedOrgId} 
+          selectedOrgId={selectedOrgId}
         />
 
-        <MilestoneModal
-          isOpen={showMilestonesModal}
-          job={selectedJob}
-          onClose={() => setShowMilestonesModal(false)}
-          onSave={() => showToast("Milestones saved successfully")}
-        />
+        
 
-        <JobDetailsModal
-          isOpen={showJobDetailsModal}
-          job={selectedJob}
-          onClose={() => setShowJobDetailsModal(false)}
-        />
+
+        <JobManagementModal
+        isOpen={showJobDetailsModal}
+        job={selectedJob}
+        onClose={() => setShowJobDetailsModal(false)}
+        onSuccess={() => {
+          showToast("Operation completed successfully");
+          refetchJobs();
+        }}
+      />
+
 
         {toast.visible && (
           <Toast

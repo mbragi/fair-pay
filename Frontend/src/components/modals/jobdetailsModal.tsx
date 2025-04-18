@@ -2,7 +2,7 @@
 
 const JobDetailsModal = ({ isOpen, job, onClose }: any) => {
  if (!isOpen || !job) return null;
-
+ console.log("Job Details:", job); 
  return (
   <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
    <div className="bg-white p-8 rounded-lg max-w-lg w-full shadow-xl">
