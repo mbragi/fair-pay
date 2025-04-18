@@ -30,7 +30,7 @@ const JobDetailsModal: React.FC<Props> = ({ isOpen, job, onClose }) => {
   const formattedPayment = formatEth(totalPayment);
   const workerDisplay =
     worker?.toLowerCase() === ethers.constants.AddressZero.toLowerCase()
-      ? "Unapproved"
+      ? "Unassigned"
       : worker;
 
   return (

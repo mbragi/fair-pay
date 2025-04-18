@@ -12,7 +12,8 @@ import CreateJobModal from "../../components/modals/createJobmodal";
 import Toast from "../../components/common/Toast";
 import { Job } from "../../types/generated";
 import MilestoneModal from "../../components/modals/milestoneModal";
-import JobDetailsModal from "../../components/modals/jobdetailsModal";
+// import JobDetailsModal from "../../components/modals/jobdetailsModal";
+import JobManagementModal from "../../components/modals/JobManagementModal";
 
 const ClientPage: React.FC = () => {
   const { address, isConnected } = useAuth();
@@ -150,10 +151,21 @@ const ClientPage: React.FC = () => {
           onClose={() => setShowMilestonesModal(false)}
         />
 
-        <JobDetailsModal
+        {/* <JobDetailsModal
           isOpen={showJobDetailsModal}
           job={selectedJob as Job}
           onClose={() => setShowJobDetailsModal(false)}
+        /> */}
+
+        <JobManagementModal
+          isOpen={showJobDetailsModal}
+          onClose={() => setShowJobDetailsModal(false)}
+          job={selectedJob as Job}
+          onSuccess={async () => {
+            showToast("Job updated successfully");
+            await refetchJobs();
+          }
+          }
         />
 
         {toast.visible && (

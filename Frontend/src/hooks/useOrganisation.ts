@@ -31,7 +31,6 @@ export const useOrganizations = () => {
 
   const { mutateAsync: sendTx, isPending } = useSendTransaction();
 
-  // 📤 WRITE METHODS
   const createOrganization = async (name: string, description: string) => {
     const tx = prepareContractCall({
       contract,

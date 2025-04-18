@@ -51,7 +51,6 @@ const MilestoneModal = ({ isOpen, job, onClose }: MilestoneModalProps) => {
   const descriptions = milestones.map((m) => m.description);
   const amounts = milestones.map((m) => m.amount);
   const deadlines = milestones.map((m) => m.deadline);
-
   await submitMilestones(titles, descriptions, amounts, deadlines);
   onClose();
  }
