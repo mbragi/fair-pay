@@ -138,7 +138,7 @@ contract OrganizationManager {
         bool[] memory activeStatuses,
         uint256[] memory creationTimes
     ) {
-        // First, count how many organizations the address owns
+        // First, count how many organizations the address own
         uint256 count = 0;
         for (uint256 i = 1; i <= organizationCount; i++) {
             if (organizations[i].owner == _owner) {
