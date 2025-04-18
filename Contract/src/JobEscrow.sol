@@ -200,6 +200,15 @@ contract JobEscrow is ReentrancyGuard, Initializable {
         IFairPayCore(platform).registerWorkerJob(worker);
         emit JobStart(worker);
     }
+
+    function completeMilestone(uint256 _index) external onlyWorker jobActive {
+        if (_index >= milestones.length) revert InvalidMilestone();
+        if (_index != currentMilestoneIndex) revert InvalidMilestone();
+        if (milestones[_index].status != MilestoneStatus.InProgress) revert InvalidMilestone();
+        
+        milestones[_index].status = MilestoneStatus.Completed;
+        emit MilestoneUpdate(_index, MilestoneStatus.Completed);
+    }
     
     function approveMilestone(uint256 _index) external onlyEmployer jobActive nonReentrant {
         if (_index >= milestones.length) revert InvalidMilestone();
