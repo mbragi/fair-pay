@@ -1,6 +1,25 @@
 // components/JobList.tsx
 import React, { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { 
+  ArrowLeft, 
+  Briefcase, 
+  Clock, 
+  CheckCircle, 
+  XCircle, 
+  PlusCircle, 
+  ChevronDown, 
+  ChevronUp,
+  Calendar,
+  DollarSign,
+  Award,
+  BarChart,
+  Layers,
+  AlertTriangle,
+  Search,
+  Filter,
+  Tag,
+  User
+} from "lucide-react";
 import { formatEther } from "ethers/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGetMilestones, Milestone } from "../../hooks/useGetMilestones";
@@ -28,6 +47,45 @@ function getStatusText(status: number): string {
   }
 }
 
+function getStatusColor(status: number): string {
+  switch (status) {
+    case 0: return "bg-blue-500";
+    case 1: return "bg-amber-500";
+    case 2: return "bg-green-500";
+    case 3: return "bg-red-500";
+    default: return "bg-gray-500";
+  }
+}
+
+function getStatusIcon(status: number) {
+  switch (status) {
+    case 0: return <PlusCircle size={16} />;
+    case 1: return <Clock size={16} />;
+    case 2: return <CheckCircle size={16} />;
+    case 3: return <XCircle size={16} />;
+    default: return <AlertTriangle size={16} />;
+  }
+}
+
+const MilestoneProgressBar = ({ current, total }: { current: number, total: number }) => {
+  const percentage = total > 0 ? (current / total) * 100 : 0;
+  
+  return (
+    <div className="relative pt-1 w-full">
+      <div className="flex items-center justify-between mb-1">
+        <div className="text-xs font-semibold text-indigo-700">Progress</div>
+        <div className="text-xs font-semibold text-indigo-700">{current}/{total}</div>
+      </div>
+      <div className="flex h-2 overflow-hidden rounded bg-indigo-100">
+        <div
+          style={{ width: `${percentage}%` }}
+          className="bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300 ease-in-out"
+        ></div>
+      </div>
+    </div>
+  );
+};
+
 const JobCard: React.FC<{
   job: Job;
   isExpanded: boolean;
@@ -37,6 +95,7 @@ const JobCard: React.FC<{
 }> = ({ job, isExpanded, toggleExpand, onSelectJob, onCreateMilestones }) => {
   const count = Number(job.milestoneCount);
   const { milestones, isLoading: loading } = useGetMilestones(job.address, count);
+  const [isHovered, setIsHovered] = useState(false);
 
   const valid = milestones.filter((m: Milestone) =>
     (m.title?.trim().length ?? 0) > 0 ||
@@ -45,6 +104,9 @@ const JobCard: React.FC<{
     (m.status > 0)
   );
   const has = !loading && valid.length > 0;
+  
+  // Calculate completed milestones
+  const completedMilestones = valid.filter((m: Milestone) => m.status === 2).length;
 
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -52,36 +114,101 @@ const JobCard: React.FC<{
     else onCreateMilestones(job);
   };
 
+  const statusColor = getStatusColor(job.status);
+  const statusIcon = getStatusIcon(job.status);
+
   return (
-    <div className="bg-white shadow rounded-lg p-6 hover:shadow-lg transition">
-      {/* Header */}
-      <div className="cursor-pointer" onClick={() => onSelectJob(job)}>
-        <h3 className="text-xl font-semibold truncate">{job.title}</h3>
-        <p className="text-sm text-gray-600 mt-1 truncate">{job.description}</p>
-        <div className="flex justify-between items-center mt-3">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-indigo-700">
-              {count} Milestone{count !== 1 && "s"}
+    <motion.div 
+      className={`relative overflow-hidden bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 ${isHovered ? 'transform scale-[1.01]' : ''}`}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      whileHover={{ y: -4 }}
+    >
+      {/* Status indicator */}
+      <div className={`absolute top-0 left-0 w-full h-1 ${statusColor}`}></div>
+      
+      {/* Card Content */}
+      <div className="p-6">
+        <div className="cursor-pointer" onClick={() => onSelectJob(job)}>
+          {/* Header with icons */}
+          <div className="flex justify-between items-start mb-4">
+            <div className="bg-indigo-50 p-2 rounded-lg">
+              <Briefcase className="text-indigo-600" size={24} />
+            </div>
+            <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
+              job.status === 0 ? 'bg-blue-100 text-blue-800' :
+              job.status === 1 ? 'bg-amber-100 text-amber-800' :
+              job.status === 2 ? 'bg-green-100 text-green-800' :
+              'bg-red-100 text-red-800'
+            }`}>
+              {statusIcon}
+              {getStatusText(job.status)}
             </span>
-            <button
-              onClick={handleToggle}
-              className="text-sm text-indigo-600 hover:underline"
-            >
-              {has
-                ? isExpanded ? "Hide Milestones" : "View Milestones"
-                : "Create Milestones"}
-            </button>
           </div>
-          <p className="text-sm font-medium">
-            {formatEther(job.totalPayment.toString())} ETH
-          </p>
+
+          <h3 className="text-xl font-bold text-gray-800 mb-2 truncate">{job.title}</h3>
+          <p className="text-gray-600 text-sm mb-4 line-clamp-2">{job.description}</p>
+          
+          {/* Stats row */}
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className="bg-gray-50 p-3 rounded-lg flex items-center gap-2">
+              <div className="bg-green-100 p-1 rounded">
+                <DollarSign size={16} className="text-green-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Payment</p>
+                <p className="text-sm font-semibold">{formatEther(job.totalPayment.toString())} ETH</p>
+              </div>
+            </div>
+            <div className="bg-gray-50 p-3 rounded-lg flex items-center gap-2">
+              <div className="bg-blue-100 p-1 rounded">
+                <Layers size={16} className="text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Milestones</p>
+                <p className="text-sm font-semibold">{count}</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Progress bar */}
+          {has && <MilestoneProgressBar current={completedMilestones} total={count} />}
         </div>
-        <p className="mt-2 text-xs text-gray-500">
-          Status: {getStatusText(job.status)}
-        </p>
+
+        {/* Action buttons */}
+        <div className="mt-4 flex justify-between items-center">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectJob(job);
+            }}
+            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center gap-1 transition-colors"
+          >
+            <Search size={16} /> Job Details
+          </button>
+          
+          <button
+            onClick={handleToggle}
+            className="flex items-center gap-1 py-1 px-2 rounded-md bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-medium transition-all"
+          >
+            {has ? (
+              <>
+                {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                {isExpanded ? "Hide" : "View"} Milestones
+              </>
+            ) : (
+              <>
+                <PlusCircle size={16} /> Create Milestones
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* Animated Expansion */}
+      {/* Animated Expansion for Milestones */}
       <AnimatePresence initial={false}>
         {isExpanded && (
           <motion.div
@@ -89,38 +216,76 @@ const JobCard: React.FC<{
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ type: "tween", duration: 0.3 }}
-            className="overflow-hidden mt-4 border-t pt-4 space-y-4"
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="overflow-hidden bg-indigo-50 border-t border-indigo-100"
           >
-            {loading ? (
-              <p className="text-center text-gray-500">Loading…</p>
-            ) : (
-              valid.map((m: Milestone, i: number) => (
-                <div key={i} className="pl-4 border-l-2 border-indigo-200">
-                  <h4 className="font-semibold">Milestone {i + 1}</h4>
-                  <p className="text-sm text-gray-700 truncate">{m.title}</p>
-                  <p className="text-xs text-gray-500 mb-1 truncate">
-                    {m.description}
-                  </p>
-                  <p className="text-sm font-medium">
-                    Amount: {(Number(m.amount) / 1e18).toFixed(4)} ETH
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Deadline:{" "}
-                    {new Date(Number(m.deadline) * 1000).toLocaleDateString()}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Status: {getStatusText(m.status)}
-                  </p>
+            <div className="p-6 space-y-4">
+              <h4 className="font-bold text-indigo-900 flex items-center gap-2">
+                <Award size={18} /> Milestones
+              </h4>
+              
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-700"></div>
                 </div>
-              ))
-            )}
+              ) : (
+                valid.map((m: Milestone, i: number) => (
+                  <div 
+                    key={i} 
+                    className={`relative p-4 rounded-lg bg-white shadow-sm border-l-4 ${
+                      m.status === 0 ? 'border-blue-400' :
+                      m.status === 1 ? 'border-amber-400' :
+                      m.status === 2 ? 'border-green-400' :
+                      'border-red-400'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-2">
+                        <div className={`p-1 rounded-full ${
+                          m.status === 0 ? 'bg-blue-100 text-blue-600' :
+                          m.status === 1 ? 'bg-amber-100 text-amber-600' :
+                          m.status === 2 ? 'bg-green-100 text-green-600' :
+                          'bg-red-100 text-red-600'
+                        }`}>
+                          {getStatusIcon(m.status)}
+                        </div>
+                        <h5 className="font-semibold text-gray-900">Milestone {i + 1}</h5>
+                      </div>
+                      <span className="text-xs font-medium bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">
+                        {(Number(m.amount) / 1e18).toFixed(3)} ETH
+                      </span>
+                    </div>
+                    
+                    <p className="text-gray-700 mt-2 font-medium">{m.title || "Untitled"}</p>
+                    <p className="text-gray-600 text-sm mt-1">{m.description || "No description provided"}</p>
+                    
+                    <div className="flex items-center justify-between mt-3 text-xs">
+                      <div className="flex items-center gap-1 text-gray-500">
+                        <Calendar size={14} />
+                        Deadline: {new Date(Number(m.deadline) * 1000).toLocaleDateString()}
+                      </div>
+                      <div className="flex items-center gap-1 text-gray-500">
+                        <Tag size={14} />
+                        Status: {getStatusText(m.status)}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 };
+
+
+
+
+
+
+
 
 const JobList: React.FC<Props> = ({
   jobs,
@@ -133,59 +298,118 @@ const JobList: React.FC<Props> = ({
   onBack,
 }) => {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState<number | null>(null);
+  
   const orgName = organizations.find((o) => o.id === selectedOrgId)?.name;
 
   const toggle = (addr: string) => {
     setExpanded((prev) => (prev === addr ? null : addr));
   };
 
+  // Filter jobs by search term and status
+  const filteredJobs = jobs.filter(job => {
+    const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        job.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === null || job.status === filterStatus;
+    return matchesSearch && matchesStatus;
+  });
+
   return (
-    <div className="px-4">
-      <header className="bg-white border-b border-gray-200 shadow-sm mb-8 px-4 py-6 flex flex-col sm:flex-row justify-between items-start sm:items-center max-w-7xl mx-auto">
-        <div className="flex items-center space-x-4 mb-4 sm:mb-0">
-          {selectedOrgId && (
+    <div className="space-y-6">
+      {/* Filter bar */}
+      <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search size={18} className="text-gray-400" />
+            </div>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search jobs by title or description..."
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+          
+          <div className="w-full md:w-auto flex gap-2">
+            <div className="relative flex items-center">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Filter size={16} className="text-gray-400" />
+              </div>
+              <select
+                value={filterStatus !== null ? filterStatus : ""}
+                onChange={(e) => setFilterStatus(e.target.value === "" ? null : Number(e.target.value))}
+                className="pl-10 pr-8 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+              >
+                <option value="">All Statuses</option>
+                <option value="0">Created</option>
+                <option value="1">In Progress</option>
+                <option value="2">Completed</option>
+                <option value="3">Cancelled</option>
+              </select>
+            </div>
+            
             <button
-              onClick={onBack}
-              className="flex items-center text-indigo-600 hover:text-indigo-800"
+              onClick={onCreateClick}
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-2.5 px-4 rounded-lg font-medium flex items-center gap-2 transition-all shadow-md hover:shadow-lg"
             >
-              <ArrowLeft size={18} className="mr-1" />
-              <span className="text-sm font-medium">Back</span>
+              <PlusCircle size={18} />
+              New Job
             </button>
-          )}
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-              {selectedOrgId
-                ? `Jobs for ${orgName || "Organization"}`
-                : "All Jobs"}
-            </h1>
-            <p className="hidden sm:block text-sm text-gray-500 mt-1">
-              {jobs.length} {jobs.length === 1 ? "job" : "jobs"} available
-            </p>
           </div>
         </div>
-        {selectedOrgId && (
-          <button
-            onClick={onCreateClick}
-            className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700"
+      </div>
+
+      {/* Results summary */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-sm text-gray-600">
+          Showing {filteredJobs.length} {filteredJobs.length === 1 ? "job" : "jobs"}
+          {searchTerm && <span> matching "{searchTerm}"</span>}
+          {filterStatus !== null && <span> with status: {getStatusText(filterStatus)}</span>}
+        </div>
+        
+        {expanded && (
+          <button 
+            onClick={() => setExpanded(null)}
+            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
           >
-            Create Job
+            Collapse All
           </button>
         )}
-      </header>
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-start gap-6 max-w-7xl mx-auto">
-        {isLoading
-          ? Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="bg-white p-6 rounded-lg shadow animate-pulse"
-            >
-              <div className="h-6 bg-gray-200 rounded w-3/4 mb-4" />
-              <div className="h-4 bg-gray-200 rounded w-full" />
-              <div className="h-4 bg-gray-100 rounded w-1/2 mt-4" />
+      {/* Job grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {isLoading ? (
+          // Skeleton loaders
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-xl shadow-md p-6 animate-pulse">
+              <div className="flex justify-between items-start mb-4">
+                <div className="h-10 w-10 bg-gray-200 rounded-lg"></div>
+                <div className="h-6 w-20 bg-gray-200 rounded-full"></div>
+              </div>
+              <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-full mb-1"></div>
+              <div className="h-4 bg-gray-200 rounded w-5/6 mb-4"></div>
+              
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                <div className="h-16 bg-gray-100 rounded-lg"></div>
+                <div className="h-16 bg-gray-100 rounded-lg"></div>
+              </div>
+              
+              <div className="h-4 bg-gray-200 rounded w-full mb-4"></div>
+              
+              <div className="flex justify-between items-center mt-4">
+                <div className="h-8 w-24 bg-gray-200 rounded"></div>
+                <div className="h-8 w-32 bg-gray-200 rounded"></div>
+              </div>
             </div>
           ))
-          : jobs.map((job) => (
+        ) : filteredJobs.length > 0 ? (
+          // Job cards
+          filteredJobs.map((job) => (
             <JobCard
               key={job.address}
               job={job}
@@ -194,7 +418,28 @@ const JobList: React.FC<Props> = ({
               onSelectJob={onSelectJob}
               onCreateMilestones={onCreateMilestones}
             />
-          ))}
+          ))
+        ) : (
+          // Empty state
+          <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+            <div className="bg-indigo-50 p-4 rounded-full mb-4">
+              <Search size={40} className="text-indigo-400" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-700 mb-2">No jobs found</h3>
+            <p className="text-gray-500 mb-6 max-w-md">
+              {searchTerm || filterStatus !== null
+                ? "Try adjusting your search or filters to find what you're looking for."
+                : "You haven't created any jobs for this organization yet."}
+            </p>
+            <button
+              onClick={onCreateClick}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-lg font-medium flex items-center gap-2 transition-all"
+            >
+              <PlusCircle size={18} />
+              Create Your First Job
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

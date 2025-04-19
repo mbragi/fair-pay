@@ -73,7 +73,6 @@ interface IJobEscrow {
         uint256[] memory deadlines,
         uint8[] memory statuses
     );
-    
 }
 
 interface IWorkerDashboard {
