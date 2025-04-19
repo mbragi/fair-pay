@@ -9,17 +9,21 @@ import OrganizationList from "../../components/lists/organisationList";
 import JobList from "../../components/lists/jobList";
 import CreateOrganizationModal from "../../components/modals/organizationModal";
 import CreateJobModal from "../../components/modals/createJobmodal";
-import JobManagementModal from "../../components/modals/JobManagementModal";
 import Toast from "../../components/common/Toast";
+import { Job } from "../../types/generated";
+import MilestoneModal from "../../components/modals/milestoneModal";
+// import JobDetailsModal from "../../components/modals/jobdetailsModal";
+import JobManagementModal from "../../components/modals/JobManagementModal";
 
 const ClientPage: React.FC = () => {
   const { address, isConnected } = useAuth();
 
   const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
-  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
   const [showCreateJobModal, setShowCreateJobModal] = useState(false);
   const [showJobDetailsModal, setShowJobDetailsModal] = useState(false);
+  const [showMilestonesModal, setShowMilestonesModal] = useState(false);
   
   const [toast, setToast] = useState({
     message: "",
@@ -33,7 +37,13 @@ const ClientPage: React.FC = () => {
     refetch: refetchOrganizations,
   } = useFetchOrganizationsByOwner(address ?? "");
 
-  const { createOrganization, isPending: orgPending } = useCreateOrganization();
+
+  const {
+    createOrganization,
+    isPending: orgPending,
+  } = useCreateOrganization();
+
+
 
   const {
     data: jobs,
@@ -87,8 +97,13 @@ const ClientPage: React.FC = () => {
             onCreateClick={() => setShowCreateJobModal(true)}
             onSelectJob={(job) => {
               setSelectedJob(job);
-              setShowJobDetailsModal(true);
+              setShowJobDetailsModal(true);//
             }}
+            onCreateMilestones={(job: Job) => {
+              setSelectedJob(job);
+              setShowMilestonesModal(true)
+            }
+            }
             onBack={() => setSelectedOrgId(null)}
           />
         )}
@@ -118,17 +133,8 @@ const ClientPage: React.FC = () => {
               if (jobData.orgId === null) {
                 throw new Error("Organization ID cannot be null");
               }
-              const job = await createJob(
-                jobData.orgId,
-                jobData.title,
-                jobData.description,
-                jobData.payment,
-                jobData.milestoneCount,
-                jobData.tokenAddress
-              );
-              setSelectedJob(job);
+              await createJob(jobData.orgId, jobData.title, jobData.description, jobData.payment, jobData.milestoneCount, jobData.tokenAddress);
               setShowCreateJobModal(false);
-              
               showToast("Job created successfully");
               await refetchJobs();
             } catch (e) {
@@ -139,19 +145,28 @@ const ClientPage: React.FC = () => {
           selectedOrgId={selectedOrgId}
         />
 
-        
+        <MilestoneModal
+          isOpen={showMilestonesModal}
+          job={selectedJob}
+          onClose={() => setShowMilestonesModal(false)}
+        />
 
+        {/* <JobDetailsModal
+          isOpen={showJobDetailsModal}
+          job={selectedJob as Job}
+          onClose={() => setShowJobDetailsModal(false)}
+        /> */}
 
         <JobManagementModal
-        isOpen={showJobDetailsModal}
-        job={selectedJob}
-        onClose={() => setShowJobDetailsModal(false)}
-        onSuccess={() => {
-          showToast("Operation completed successfully");
-          refetchJobs();
-        }}
-      />
-
+          isOpen={showJobDetailsModal}
+          onClose={() => setShowJobDetailsModal(false)}
+          job={selectedJob as Job}
+          onSuccess={async () => {
+            showToast("Job updated successfully");
+            await refetchJobs();
+          }
+          }
+        />
 
         {toast.visible && (
           <Toast
