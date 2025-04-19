@@ -22,7 +22,7 @@ interface IJobEscrow {
     enum JobStatus { Created, InProgress, Completed, Cancelled }
     enum MilestoneStatus { NotStarted, InProgress, Completed, Disputed }
 
-    function workerConfirmed() external view returns (bool);
+   
     function getMilestone(uint256 index) external view returns (
         string memory _title,
         string memory _description,
@@ -33,7 +33,6 @@ interface IJobEscrow {
     function token() external view returns (address);
     function assignWorker(address _worker) external;
     function cancelJob() external;
-    function confirmJob() external;
     function completeMilestone(uint256 index) external;
     function approveMilestone(uint256 index) external;
     function getPaymentInfo() external view returns (

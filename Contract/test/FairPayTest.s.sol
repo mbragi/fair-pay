@@ -229,9 +229,7 @@ contract JobLifecycleTest is FairPayTest {
         vm.prank(orgOwner);
         IJobEscrow(jobAddress).assignWorker(worker);
         
-        // Worker confirms job
-        vm.prank(worker);
-        IJobEscrow(jobAddress).confirmJob();
+        
         
         // Complete milestones
         for (uint256 i = 0; i < 3; i++) {
@@ -259,10 +257,6 @@ contract JobLifecycleTest is FairPayTest {
 
     function test_CompleteJobFlow01() public {
       
-        vm.prank(orgOwner);
-        IJobEscrow(jobAddress).assignWorker(worker);
-        
-        
         uint256[] memory indices = new uint256[](3);
         string[] memory titles = new string[](3);
         string[] memory descs = new string[](3);
@@ -284,9 +278,10 @@ contract JobLifecycleTest is FairPayTest {
         // Deposit funds
         vm.prank(orgOwner);
         IJobEscrow(jobAddress).depositFunds();
-        // Worker confirms
-        vm.prank(worker);
-        IJobEscrow(jobAddress).confirmJob();
+
+        vm.prank(orgOwner);
+        IJobEscrow(jobAddress).assignWorker(worker);
+        
         
         // Verify job is active
         (,,,,,uint8 status,,) = IJobEscrow(jobAddress).getJobDetails();
@@ -357,45 +352,13 @@ contract DisputeAndCancellationTest is FairPayTest {
         IJobEscrow(jobAddress).assignWorker(worker);
     }
     
-    function test_CancelJobBeforeWorkerConfirmation() public {
-        // Setup job with funding and milestones
-        setupJobWithMilestones();
-        
-        // Cancel the job
-        vm.prank(orgOwner);
-        IJobEscrow(jobAddress).cancelJob();
-        
-        // Verify job status is cancelled
-        (, , , , , uint8 status, , ) = IJobEscrow(jobAddress).getJobDetails();
-        assertEq(status, uint8(IJobEscrow.JobStatus.Cancelled));
-        
-        // Verify funds are returned to employer
-        uint256 tokenBalance = testToken.balanceOf(orgOwner);
-        // Should be close to original balance (10 ether)
-        assertGe(tokenBalance, 9.99 ether);
-    }
     
-    function test_CannotCancelAfterWorkerConfirmation() public {
-        // Setup job with funding and milestones
-        setupJobWithMilestones();
-        
-        // Worker confirms the job
-        vm.prank(worker);
-        IJobEscrow(jobAddress).confirmJob();
-        
-        // Try to cancel the job - should revert
-        vm.expectRevert();
-        vm.prank(orgOwner);
-        IJobEscrow(jobAddress).cancelJob();
-    }
     
     function test_DisputeResolutionWorkerFavored() public {
         // Setup job with funding and milestones
         setupJobWithMilestones();
         
-        // Worker confirms job
-        vm.prank(worker);
-        IJobEscrow(jobAddress).confirmJob();
+        
         
         // Worker completes first milestone
         vm.prank(worker);
@@ -431,9 +394,7 @@ contract DisputeAndCancellationTest is FairPayTest {
         // Setup job with funding and milestones
         setupJobWithMilestones();
         
-        // Worker confirms job
-        vm.prank(worker);
-        IJobEscrow(jobAddress).confirmJob();
+       
         
         // Worker completes first milestone
         vm.prank(worker);
@@ -468,9 +429,7 @@ contract DisputeAndCancellationTest is FairPayTest {
         // Setup job with funding and milestones
         setupJobWithMilestones();
         
-        // Worker confirms job
-        vm.prank(worker);
-        IJobEscrow(jobAddress).confirmJob();
+        
         
         // Worker completes first milestone
         vm.prank(worker);
@@ -493,9 +452,7 @@ contract DisputeAndCancellationTest is FairPayTest {
         // Setup job with funding and milestones
         setupJobWithMilestones();
         
-        // Worker confirms job
-        vm.prank(worker);
-        IJobEscrow(jobAddress).confirmJob();
+       
         
         // Test 1: Non-platform account cannot resolve dispute
         vm.expectRevert();

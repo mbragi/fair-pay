@@ -45,7 +45,6 @@ contract JobEscrow is ReentrancyGuard, Initializable {
     uint256 public platformFee;
     uint256 public createdAt;
     address public worker;
-    bool public workerConfirmed;
     uint256 public currentMilestoneIndex;
     
     struct Milestone {
@@ -109,7 +108,7 @@ contract JobEscrow is ReentrancyGuard, Initializable {
     }
     
     modifier onlyWorker() {
-        if (!(msg.sender == worker && workerConfirmed)) revert OnlyWorker();
+        if (!(msg.sender == worker)) revert OnlyWorker();
         _;
     }
     
@@ -136,7 +135,14 @@ contract JobEscrow is ReentrancyGuard, Initializable {
         if (worker != address(0)) revert WorkerAlreadyAssigned();
         
         worker = _worker;
+        status = JobStatus.InProgress;
+        milestones[0].status = MilestoneStatus.InProgress;
+        
+        // Automatically register with FairPayCore
+        IFairPayCore(platform).registerWorkerJob(_worker);
+        
         emit WorkerAssigned(_worker);
+        emit JobStart(_worker);
     }
     
     function setMilestones(
@@ -147,7 +153,6 @@ contract JobEscrow is ReentrancyGuard, Initializable {
         uint256[] calldata _deadlines
     ) external onlyEmployer {
         if (status != JobStatus.Created) revert JobStarted();
-        if (workerConfirmed) revert AlreadyConfirmed();
         if (_indices.length != _titles.length || 
             _indices.length != _amounts.length || 
             _indices.length != _deadlines.length) revert InvalidArrayLength();
@@ -172,34 +177,6 @@ contract JobEscrow is ReentrancyGuard, Initializable {
         emit MilestonesSet(_indices, _titles, _amounts, _deadlines);
     }
     
-    function confirmJob() external {
-        if (msg.sender != worker) revert OnlyWorker();
-        if (workerConfirmed) revert AlreadyConfirmed();
-        if (status != JobStatus.Created) revert JobStarted();
-        if (msg.sender != worker) revert OnlyAssignedWorker();
-        if (workerConfirmed) revert AlreadyConfirmed();
-        if (status != JobStatus.Created) revert JobStarted();
-        
-        // Verify all milestones are properly set
-        for (uint256 i = 0; i < milestones.length; i++) {
-            if (bytes(milestones[i].title).length == 0 || milestones[i].amount == 0) {
-                revert InvalidMilestone();
-            }
-        }
-        
-        // Verify funding
-        if (token == address(0)) {
-            if (address(this).balance < totalPayment) revert InsufficientFunds();
-        } else {
-            if (IERC20(token).balanceOf(address(this)) < totalPayment) revert InsufficientFunds();
-        }
-        
-        workerConfirmed = true;
-        status = JobStatus.InProgress;
-        milestones[0].status = MilestoneStatus.InProgress;
-        IFairPayCore(platform).registerWorkerJob(worker);
-        emit JobStart(worker);
-    }
 
     function completeMilestone(uint256 _index) external onlyWorker jobActive {
         if (_index >= milestones.length) revert InvalidMilestone();
@@ -272,7 +249,6 @@ contract JobEscrow is ReentrancyGuard, Initializable {
 
     function cancelJob() external onlyEmployer nonReentrant {
         if (status != JobStatus.Created) revert JobStarted();
-        if (workerConfirmed) revert AlreadyConfirmed();
         
         status = JobStatus.Cancelled;
         uint256 balance = token == address(0) 
