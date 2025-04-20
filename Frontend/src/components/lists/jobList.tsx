@@ -1,29 +1,23 @@
 // components/JobList.tsx
 import React, { useState } from "react";
 import { 
-  ArrowLeft, 
   Briefcase, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
   PlusCircle, 
   ChevronDown, 
   ChevronUp,
   Calendar,
   DollarSign,
   Award,
-  BarChart,
   Layers,
-  AlertTriangle,
   Search,
   Filter,
   Tag,
-  User
 } from "lucide-react";
 import { formatEther } from "ethers/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGetMilestones, Milestone } from "../../hooks/useGetMilestones";
 import { Job } from "../../types/generated";
+import { getStatusColor, getStatusIcon, getStatusText } from "../../utils/contractUtils";
 
 interface Props {
   jobs: Job[];
@@ -37,35 +31,7 @@ interface Props {
   onBack: () => void;
 }
 
-function getStatusText(status: number): string {
-  switch (status) {
-    case 0: return "Created";
-    case 1: return "In Progress";
-    case 2: return "Completed";
-    case 3: return "Cancelled";
-    default: return "Unknown";
-  }
-}
 
-function getStatusColor(status: number): string {
-  switch (status) {
-    case 0: return "bg-blue-500";
-    case 1: return "bg-amber-500";
-    case 2: return "bg-green-500";
-    case 3: return "bg-red-500";
-    default: return "bg-gray-500";
-  }
-}
-
-function getStatusIcon(status: number) {
-  switch (status) {
-    case 0: return <PlusCircle size={16} />;
-    case 1: return <Clock size={16} />;
-    case 2: return <CheckCircle size={16} />;
-    case 3: return <XCircle size={16} />;
-    default: return <AlertTriangle size={16} />;
-  }
-}
 
 const MilestoneProgressBar = ({ current, total }: { current: number, total: number }) => {
   const percentage = total > 0 ? (current / total) * 100 : 0;
@@ -290,18 +256,14 @@ const JobCard: React.FC<{
 const JobList: React.FC<Props> = ({
   jobs,
   isLoading,
-  selectedOrgId,
-  organizations,
   onSelectJob,
   onCreateMilestones,
   onCreateClick,
-  onBack,
 }) => {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<number | null>(null);
   
-  const orgName = organizations.find((o) => o.id === selectedOrgId)?.name;
 
   const toggle = (addr: string) => {
     setExpanded((prev) => (prev === addr ? null : addr));

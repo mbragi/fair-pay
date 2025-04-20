@@ -10,7 +10,7 @@ interface Job {
 
 interface MilestoneModalProps {
   isOpen: boolean;
-  job: Job | null;
+  job: Job ;
   onClose: () => void;
 }
 

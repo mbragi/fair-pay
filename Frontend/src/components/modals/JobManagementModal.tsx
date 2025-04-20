@@ -90,7 +90,7 @@ const JobManagementModal: React.FC<JobManagementModalProps> = ({ isOpen, job, on
   const formattedPayment = formatEther(job.totalPayment.toString());
   
   // Calculate milestone progress percentage
-  const milestoneProgress = (parseInt(job.currentMilestone.toString()) / parseInt(job.milestoneCount.toString())) * 100;
+  const milestoneProgress = (parseInt(job.currentMilestone?.toString() || '0') / parseInt(job.milestoneCount?.toString() || '1')) * 100;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300 ease-in-out">
@@ -137,7 +137,7 @@ const JobManagementModal: React.FC<JobManagementModalProps> = ({ isOpen, job, on
                 style={{ width: `${milestoneProgress}%` }}
               ></div>
             </div>
-            <span className="text-sm font-medium">{job.currentMilestone.toString()}/{job.milestoneCount.toString()}</span>
+            <span className="text-sm font-medium">{job.currentMilestone?.toString()}/{job.milestoneCount?.toString()}</span>
           </div>
         </div>
 
@@ -198,7 +198,7 @@ const JobManagementModal: React.FC<JobManagementModalProps> = ({ isOpen, job, on
                     </div>
                     <div>
                       <h4 className="text-sm text-gray-500">Milestones</h4>
-                      <p className="text-lg font-semibold">{job.milestoneCount.toString()} total</p>
+                      <p className="text-lg font-semibold">{job.milestoneCount?.toString()} total</p>
                     </div>
                   </div>
                 </div>
