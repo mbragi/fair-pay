@@ -10,10 +10,10 @@ export const useFetchJobDetails = (jobAddress: string) => {
     client,
   });
 
-  const { data, isLoading } = useReadContract({
+  const { data, isLoading, error, refetch } = useReadContract({
     contract,
     method: "function getJobDetails()",
   });
 
-  return { data, isLoading };
+  return { data, isLoading, error, refetch };
 };

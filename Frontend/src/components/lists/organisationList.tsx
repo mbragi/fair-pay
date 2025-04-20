@@ -4,14 +4,13 @@ import {
   PlusCircle, 
   Search, 
   Filter,
-  User,
   Users,
   Calendar,
   CheckCircle,
   AlertCircle,
   ExternalLink 
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 interface Organization {
   id: number;
