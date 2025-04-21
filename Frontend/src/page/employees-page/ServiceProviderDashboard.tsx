@@ -100,7 +100,7 @@ const ServiceProviderDashboard = () => {
               <div>
                 <p className="text-sm text-gray-500 font-medium">Completed</p>
                 <p className="text-xl font-bold text-gray-800">
-                  {jobs.filter(job => job.status === "Completed").length}
+                  {jobs.filter(job => getStatusText(job.status) === "Completed").length}
                 </p>
               </div>
             </div>
@@ -114,7 +114,7 @@ const ServiceProviderDashboard = () => {
               <div>
                 <p className="text-sm text-gray-500 font-medium">In Progress</p>
                 <p className="text-xl font-bold text-gray-800">
-                  {jobs.filter(job => job.status === "InProgress").length}
+                  {jobs.filter(job => getStatusText(job.status) === "In Progress").length}
                 </p>
               </div>
             </div>
@@ -128,7 +128,7 @@ const ServiceProviderDashboard = () => {
               <div>
                 <p className="text-sm text-gray-500 font-medium">Disputed</p>
                 <p className="text-xl font-bold text-gray-800">
-                  {jobs.filter(job => job.status === "Disputed").length}
+                  {jobs.filter(job => getStatusText(job.status) === "Disputed").length}
                 </p>
               </div>
             </div>

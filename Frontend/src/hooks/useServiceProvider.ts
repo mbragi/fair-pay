@@ -21,8 +21,6 @@ interface JobSummary {
   currentMilestoneIndex: number;
 }
 
-// Hard‑coded Sepolia Blockscout API endpoint
-const BLOCKSCOUT_API_URL = "https://eth-sepolia.blockscout.com/api";
 
 export function useServiceProvider() {
   const { address = "" } = useAuth();
@@ -111,41 +109,11 @@ export function useServiceProvider() {
     paymentInfo,
     error: paymentInfoError,
     isLoading: paymentInfoLoading,
+    tokenSymbol,
+    tokenName,
+    tokenLoading,
+    tokenError,
   } = useGetJobPaymentInfo(selectedJob ?? "");
-
-  // 7) fetch token metadata via Blockscout
-  const [tokenSymbol, setTokenSymbol] = useState<string>("");
-  const [tokenName, setTokenName] = useState<string>("");
-  const [tokenLoading, setTokenLoading] = useState(false);
-  const [tokenError, setTokenError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    const tokenAddr = paymentInfo?.token;
-    if (!tokenAddr) {
-      setTokenSymbol("");
-      setTokenName("");
-      return;
-    }
-
-    setTokenLoading(true);
-    setTokenError(null);
-
-    const url = `${BLOCKSCOUT_API_URL}?module=token&action=getToken&contractaddress=${tokenAddr}`;
-    fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status !== "1" || !data.result) {
-          throw new Error(data.message || "Blockscout token lookup failed");
-        }
-        setTokenSymbol(data.result.symbol);
-        setTokenName(data.result.name);
-      })
-      .catch((err) => {
-        console.error("Blockscout token error:", err);
-        setTokenError(err);
-      })
-      .finally(() => setTokenLoading(false));
-  }, [paymentInfo?.token]);
 
   // 8) milestone submission
   const { mutateAsync: sendTx, isPending } = useSendTransaction();

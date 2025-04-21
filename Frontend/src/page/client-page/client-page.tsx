@@ -53,7 +53,7 @@ const ClientPage: React.FC = () => {
     data: jobs,
     refetch: refetchJobs,
     isLoading: jobsPending,
-  } = useFetchOrganizationJobs(selectedOrgId ?? 1);
+  } = useFetchOrganizationJobs(selectedOrgId ?? 0);
 
   const { createJob } = useCreateJob();
 
@@ -81,7 +81,7 @@ const ClientPage: React.FC = () => {
 
   // Calculate stats
   const totalOrgs = organizations?.length || 0;
-  const totalJobs = jobs?.length || 0;
+  const totalJobs = jobs.filter(i=>i.employer === address)?.length || 0;
   const activeJobs = jobs?.filter(job => String(job.status) === 'active')?.length || 0;
 
   if (!isConnected || !address) {
@@ -250,6 +250,7 @@ const ClientPage: React.FC = () => {
           onClose={() => setShowJobDetailsModal(false)}
           job={selectedJob as Job}
           onSuccess={async () => {
+            await refetchJobs();
             showToast("Job updated successfully");
             await refetchJobs();
           }}

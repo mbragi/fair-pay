@@ -1,6 +1,6 @@
 // components/JobCard.tsx
 import { motion } from "framer-motion";
-import { CheckCircle, Briefcase,DollarSign } from "lucide-react";
+import { CheckCircle, DollarSign } from "lucide-react";
 import ConfirmJobButton from "./ConfirmJobButton";
 
 interface JobCardProps {
