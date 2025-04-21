@@ -25,6 +25,7 @@ contract WorkerDashboard is Ownable {
         uint256 milestoneCount;
         uint256 currentMilestone;
         MilestoneInfo[] milestones;
+        bool isFunded;
     }
     
     constructor(address _fairPayCore) Ownable(msg.sender) {
@@ -53,7 +54,8 @@ contract WorkerDashboard is Ownable {
             uint256 totalPayment,
             uint8 status,
             uint256 milestoneCount,
-            uint256 currentMilestone
+            uint256 currentMilestone,
+            bool isFunded
         ) = jobEscrow.getJobDetails();
         
         // Get milestone details
@@ -87,6 +89,7 @@ contract WorkerDashboard is Ownable {
         job.milestoneCount = milestoneCount;
         job.currentMilestone = currentMilestone;
         job.milestones = milestones;
+        job.isFunded = isFunded;
         
         return job;
     }

@@ -62,7 +62,8 @@ interface IJobEscrow {
         uint256 _totalPayment,
         uint8 _status,
         uint256 _milestoneCount,
-        uint256 _currentMilestone
+        uint256 _currentMilestone,
+        bool _isFunded
     );
     
     function getAllMilestones() external view returns (
