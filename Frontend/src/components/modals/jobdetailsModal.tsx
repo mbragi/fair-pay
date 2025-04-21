@@ -1,7 +1,8 @@
 import React from "react";
-import { BigNumberish, ethers } from "ethers";
+import { ethers } from "ethers";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Job } from "../../types/generated";
+import { formatEth } from "../../utils/contractUtils";
 
 interface Props {
   isOpen: boolean;
@@ -9,19 +10,7 @@ interface Props {
   onClose: () => void;
 }
 
-/**
- * Format a BigNumberish value as ETH using ethers.js
- */
-const formatEth = (value: BigNumberish): string => {
-  try {
-    const etherString = ethers.utils.formatEther(value);
-    const [whole, fraction = ""] = etherString.split(".");
-    const padded = (fraction + "0000").slice(0, 4);
-    return `${whole}.${padded} ETH`;
-  } catch {
-    return "0.0000 ETH";
-  }
-};
+
 
 const JobDetailsModal: React.FC<Props> = ({ isOpen, job, onClose }) => {
   if (!isOpen) return null;

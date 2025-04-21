@@ -96,12 +96,9 @@ contract FairPayCore is Ownable, ReentrancyGuard {
     function registerWorkerJob(address _worker) external {
         require(validJobContracts[msg.sender], "Caller is not a valid job contract");
         
-        // Verify that the worker is actually assigned to this job
+        // just verify worker is assigned
         (, address assignedWorker,,,,,,) = IJobEscrow(msg.sender).getJobDetails();
         require(assignedWorker == _worker, "Worker not assigned to this job");
-        
-        // additional check to ensure the worker has confirmed the job
-        require(IJobEscrow(msg.sender).workerConfirmed(), "Worker has not confirmed this job");
         
         workerJobs[_worker].push(msg.sender);
         emit WorkerAssigned(_worker, msg.sender);

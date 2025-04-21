@@ -5,7 +5,6 @@ import { useCreateOrganization } from "../../hooks/useCreateOrganisation";
 import { useCreateJob } from "../../hooks/useCreateJob";
 import { useFetchOrganizationJobs } from "../../hooks/useFetchOrganisationsJobs";
 import OrganizationList from "../../components/lists/organisationList";
-import ConnectModal from "../../components/modals/connectModal";
 import JobList from "../../components/lists/jobList";
 import CreateOrganizationModal from "../../components/modals/organizationModal";
 import CreateJobModal from "../../components/modals/createJobmodal";
@@ -14,7 +13,7 @@ import { Job } from "../../types/generated";
 import MilestoneModal from "../../components/modals/milestoneModal";
 import JobManagementModal from "../../components/modals/JobManagementModal";
 // Import icons
-import { Building, Briefcase, Plus, ChevronLeft, ArrowRight, ExternalLink, AlertCircle } from "lucide-react";
+import { Building, Briefcase, Plus, ChevronLeft, ExternalLink, AlertCircle } from "lucide-react";
 
 const ClientPage: React.FC = () => {
   const { address, isConnected } = useAuth();
@@ -28,7 +27,9 @@ const ClientPage: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
+    console.debug(modalOpen);
     if (address) setModalOpen(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address]);
 
   const [toast, setToast] = useState({
@@ -153,6 +154,7 @@ const ClientPage: React.FC = () => {
             <div>
               
               <OrganizationList
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 organizations={organizations as unknown as any[]}
                 onCreateClick={() => setShowCreateOrgModal(true)}
                 onSelect={handleOrgSelect}
@@ -177,9 +179,10 @@ const ClientPage: React.FC = () => {
               </div>
               
               <JobList
-                jobs={jobs as unknown as any[]}
+                jobs={jobs as Job[]}
                 isLoading={jobsPending}
                 selectedOrgId={selectedOrgId}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 organizations={organizations as unknown as any[]}
                 onCreateClick={() => setShowCreateJobModal(true)}
                 onSelectJob={(job) => {
@@ -234,11 +237,13 @@ const ClientPage: React.FC = () => {
           selectedOrgId={selectedOrgId}
         />
 
-        <MilestoneModal
-          isOpen={showMilestonesModal}
-          job={selectedJob}
-          onClose={() => setShowMilestonesModal(false)}
-        />
+        {selectedJob && (
+          <MilestoneModal
+            isOpen={showMilestonesModal}
+            job={selectedJob}
+            onClose={() => setShowMilestonesModal(false)}
+          />
+        )}
 
         <JobManagementModal
           isOpen={showJobDetailsModal}

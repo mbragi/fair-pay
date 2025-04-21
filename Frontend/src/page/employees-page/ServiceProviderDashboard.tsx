@@ -1,4 +1,6 @@
+
 import { useState, useEffect } from "react";
+
 import {
   Clock,
   CheckCircle,
@@ -74,6 +76,7 @@ const ServiceProviderDashboard = () => {
   };
 
   // Helper function to get status icon
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "Completed":
@@ -88,7 +91,6 @@ const ServiceProviderDashboard = () => {
         return <FileText className="w-5 h-5 text-gray-500" />;
     }
   };
-
   // Helper function for status badge style
   const getStatusBadgeStyle = (status: string) => {
     switch (status) {
@@ -194,12 +196,11 @@ const ServiceProviderDashboard = () => {
       {loading && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto" />
             <p className="text-center mt-4 text-gray-700">Loading...</p>
           </div>
         </div>
       )}
-
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats overview */}
@@ -294,6 +295,7 @@ const ServiceProviderDashboard = () => {
                 <div className="p-8 text-center">
                   <div className="bg-indigo-50 p-4 rounded-full inline-flex mb-4">
                     <Briefcase className="h-8 w-8 text-indigo-400" />
+
                   </div>
                   <h3 className="text-lg font-medium text-gray-800 mb-2">
                     No jobs assigned yet
@@ -302,6 +304,7 @@ const ServiceProviderDashboard = () => {
                     Jobs assigned to you will appear here
                   </p>
                 </div>
+
               ) : (
                 <div className="divide-y divide-gray-100">
                   {jobs.map((job) => (
@@ -614,6 +617,7 @@ const ServiceProviderDashboard = () => {
               )}
             </AnimatePresence>
           </div>
+
         </div>
       </main>
     </div>
