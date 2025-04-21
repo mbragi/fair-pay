@@ -176,14 +176,6 @@ const ClientPage: React.FC = () => {
                     {organizations?.find(org => org.id === selectedOrgId)?.name || "Organization"} Jobs
                   </h2>
                 </div>
-                
-                <button
-                  onClick={() => setShowCreateJobModal(true)}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg flex items-center gap-2 shadow-md transition-all hover:shadow-lg mt-4 md:mt-0"
-                >
-                  <Plus size={18} />
-                  Post New Job
-                </button>
               </div>
               
               <JobList
