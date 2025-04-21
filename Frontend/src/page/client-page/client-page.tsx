@@ -13,7 +13,7 @@ import { Job } from "../../types/generated";
 import MilestoneModal from "../../components/modals/milestoneModal";
 import JobManagementModal from "../../components/modals/JobManagementModal";
 // Import icons
-import { Building, Briefcase, Plus, ChevronLeft, ExternalLink, AlertCircle } from "lucide-react";
+import { Building, Briefcase, ChevronLeft, ExternalLink, AlertCircle } from "lucide-react";
 
 const ClientPage: React.FC = () => {
   const { address, isConnected } = useAuth();

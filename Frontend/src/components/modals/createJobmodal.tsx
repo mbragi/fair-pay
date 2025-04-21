@@ -24,7 +24,7 @@ const CreateJobModal: React.FC<Props> = ({
   onCreate,
   selectedOrgId,
 }) => {
-  const baseTokenAddress = "0x7b79995e5f793a07bc00c21412e50ecae098e7f9"; // Sepolia WETH (all lowercase)
+  const baseTokenAddress = "0x464C8ec100F2F42fB4e42E07E203DA2324f9FC67"; // Sepolia WETH (all lowercase)
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [payment, setPayment] = useState("");

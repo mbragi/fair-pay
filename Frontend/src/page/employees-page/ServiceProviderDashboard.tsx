@@ -28,9 +28,24 @@ const ServiceProviderDashboard = () => {
     currentMilestone,
     submitMilestone,
     isPending,
+    paymentInfo,
+    tokenName,
+    tokenSymbol,
+    tokenLoading,
   } = useServiceProvider();
 
-  const getStatusIcon = (status) => {
+
+  console.log("Jobs:", jobs);
+  console.log("Selected Job:", selectedJob);
+  console.log("Job Summary:", jobSummary);
+  console.log("Milestones:", milestones);
+  console.log("Progress:", progress);
+  console.log("Current Milestone:", currentMilestone);
+  console.log("Payment Info:", paymentInfo);
+  console.log("Token Name:", tokenName);
+  
+
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case "Completed":
         return <CheckCircle className="w-5 h-5 text-green-500" />;
@@ -233,6 +248,32 @@ const ServiceProviderDashboard = () => {
           <div className="lg:col-span-2">
             {selectedJob && jobSummary ? (
               <div className="space-y-6">
+                <>   <div className="bg-white rounded-xl shadow-md border border-indigo-50 p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-purple-50 p-5 rounded-xl shadow-sm w-auto">
+                    <p className="text-sm text-purple-800 mb-2">Total Payment</p>
+                    <p className="text-2xl font-bold">{formatEth(paymentInfo?.totalPayment ?? 0)}</p>
+                  </div>
+                  <div className="bg-green-50 p-5 rounded-xl shadow-sm">
+                    <p className="text-sm text-green-800 mb-2">Paid Amount</p>
+                    <p className="text-2xl font-bold">{formatEth(paymentInfo?.paidAmount ?? 0)}</p>
+                  </div>
+                  <div className="bg-red-50 p-5 rounded-xl shadow-sm">
+                    <p className="text-sm text-red-800 mb-2">Remaining</p>
+                    <p className="text-2xl font-bold">{formatEth(paymentInfo?.remainingAmount ?? 0)}</p>
+                  </div>
+                  <div className="col-span-full bg-indigo-50 p-5 rounded-xl shadow-sm flex items-center">
+                    <DollarSign className="h-6 w-6 text-indigo-600 mr-3" />
+                    <div>
+                      <p className="text-sm text-gray-700">Token</p>
+                      {tokenLoading ? (
+                        <p className="text-sm text-gray-500">Loading...</p>
+                      ) : (
+                        <p className="text-sm text-gray-500">{tokenName} ({tokenSymbol})</p>
+                      )}
+                    </div>
+                  </div>
+                </div></>
+
                 {/* Job Details Card */}
                 <div className="bg-white rounded-xl shadow-md overflow-hidden border border-indigo-50">
                   <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 flex justify-between items-center">
@@ -407,17 +448,17 @@ const ServiceProviderDashboard = () => {
                         <button
                           onClick={() => submitMilestone(idx)}
                           className={`w-full py-3 font-medium rounded-lg transition-all transform hover:translate-y-px focus:ring-2 focus:ring-offset-2 focus:outline-none ${
-                            m.status.toString() === "Completed" ? "bg-gray-200 text-gray-500 cursor-not-allowed" :
+                            getStatusText(m.status) === "Completed" ? "bg-gray-200 text-gray-500 cursor-not-allowed" :
                             "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md"
                           }`}
-                          disabled={isPending || m.status.toString() === "Completed"}
+                          disabled={isPending || getStatusText(m.status) === "Completed"}
                         >
                           {isPending ? (
                             <div className="flex items-center justify-center">
                               <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
                               Processing...
                             </div>
-                          ) : m.status.toString() === "Completed" ? 
+                          ) : getStatusText(m.status) === "Completed" ? 
                             "Milestone Completed" : 
                             "Submit for Approval"
                           }

@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useGetMilestones, Milestone } from "../../hooks/useGetMilestones";
 import { Job } from "../../types/generated";
 import { getStatusColor, getStatusIcon, getStatusText } from "../../utils/contractUtils";
+import { useApproveMilestone } from "../../hooks/useApproveMilestone";
 
 interface Props {
   jobs: Job[];
@@ -61,6 +62,7 @@ const JobCard: React.FC<{
 }> = ({ job, isExpanded, toggleExpand, onSelectJob, onCreateMilestones }) => {
   const count = Number(job.milestoneCount);
   const { milestones, isLoading: loading } = useGetMilestones(job.address, count);
+  const {approveMilestone, isApproving}=useApproveMilestone(job?.address as '0x0');
   const [isHovered, setIsHovered] = useState(false);
 
   const valid = milestones.filter((m: Milestone) =>
@@ -235,6 +237,19 @@ const JobCard: React.FC<{
                         Status: {getStatusText(m.status)}
                       </div>
                     </div>
+                    {/* 🌟 APPROVE BUTTON 🌟 */}
+                    {m.status === 2 && (
+                      <button
+                        onClick={() => approveMilestone(i)}
+                        disabled={isApproving}
+                        className={`mt-4 w-full py-2 rounded-md font-medium transition ${isApproving
+                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
+                          }`}
+                      >
+                        {isApproving ? 'Approving...' : 'Approve Milestone'}
+                      </button>
+                    )}
                   </div>
                 ))
               )}

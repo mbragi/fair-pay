@@ -26,7 +26,10 @@ const AccountDetails = () => {
               <AccountAddress className="font-mono text-sm text-gray-800 truncate max-w-[100px]" />
             </div>
             <button
-              onClick={disconnect}
+              onClick={() => {
+                disconnect();
+                window.location.pathname = "/";
+              }}
               className="bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-600 whitespace-nowrap"
             >
               Logout
