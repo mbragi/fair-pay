@@ -31,6 +31,7 @@ interface IJobEscrow {
         uint8 _status
     );
     function token() external view returns (address);
+    function isJobFunded() external view returns (bool);
     function assignWorker(address _worker) external;
     function cancelJob() external;
     function completeMilestone(uint256 index) external;

@@ -177,10 +177,11 @@ contract JobLifecycleTest is FairPayTest {
         assertTrue(fairPay.validJobContracts(jobAddress));
         
         // Verify job details
-        (address employer, , string memory title, , uint256 payment, , , ) = IJobEscrow(jobAddress).getJobDetails();
+        (address employer, , string memory title, , uint256 payment, , ,, bool isFunded) = IJobEscrow(jobAddress).getJobDetails();
         assertEq(employer, orgOwner);
         assertEq(title, "Web Development");
         assertEq(payment, 1 ether);
+        assertEq(isFunded, false);
     }
     
     function test_JobFundingAndMilestones() public {
@@ -251,8 +252,9 @@ contract JobLifecycleTest is FairPayTest {
         }
         
         // Verify job completion
-        (, , , , , uint8 status, , ) = IJobEscrow(jobAddress).getJobDetails();
+        (, , , , , uint8 status, , ,bool isFunded) = IJobEscrow(jobAddress).getJobDetails();
         assertEq(uint256(status), uint256(IJobEscrow.JobStatus.Completed));
+        assertEq(isFunded, true);
     }
 
     function test_CompleteJobFlow01() public {
@@ -284,8 +286,9 @@ contract JobLifecycleTest is FairPayTest {
         
         
         // Verify job is active
-        (,,,,,uint8 status,,) = IJobEscrow(jobAddress).getJobDetails();
+        (,,,,,uint8 status,,,bool isFunded) = IJobEscrow(jobAddress).getJobDetails();
         assertEq(status, uint8(IJobEscrow.JobStatus.InProgress));
+        assertEq(isFunded, true);
     }
 }
 
