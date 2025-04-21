@@ -24,7 +24,8 @@ const CreateJobModal: React.FC<Props> = ({
   onCreate,
   selectedOrgId,
 }) => {
-  const baseTokenAddress = "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9"; // Sepolia WETH (all lowercase)
+  // const ethAddress = "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9"; 
+  const wbbtAddress = "0x934e4a5242603d25bB497303ab1b0f2367AA8a85"
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [payment, setPayment] = useState("");
@@ -48,7 +49,7 @@ const CreateJobModal: React.FC<Props> = ({
         description,
         payment,
         milestoneCount,
-        tokenAddress: useCustomToken ? tokenAddress : baseTokenAddress,
+        tokenAddress: useCustomToken ? tokenAddress : wbbtAddress,
       });
       // reset
       setTitle("");
@@ -143,7 +144,7 @@ const CreateJobModal: React.FC<Props> = ({
               value={useCustomToken ? "custom" : "base"}
               onChange={(e) => setUseCustomToken(e.target.value === "custom")}
             >
-              <option value="base">Sepolia WETH</option>
+              <option value="base">Wrapped Big Brother Token (WBBT)</option>
               <option value="custom">Custom ERC20 Token</option>
             </select>
           </div>

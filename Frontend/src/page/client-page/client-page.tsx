@@ -53,7 +53,7 @@ const ClientPage: React.FC = () => {
     data: jobs,
     refetch: refetchJobs,
     isLoading: jobsPending,
-  } = useFetchOrganizationJobs(selectedOrgId ?? 1);
+  } = useFetchOrganizationJobs(selectedOrgId ?? 0);
 
   const { createJob } = useCreateJob();
 

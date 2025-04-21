@@ -137,6 +137,7 @@ export function useServiceProvider() {
         if (data.status !== "1" || !data.result) {
           throw new Error(data.message || "Blockscout token lookup failed");
         }
+        console.log("Blockscout token data:", data);
         setTokenSymbol(data.result.symbol);
         setTokenName(data.result.name);
       })
