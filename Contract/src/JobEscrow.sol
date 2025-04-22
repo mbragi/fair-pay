@@ -343,6 +343,17 @@ contract JobEscrow is ReentrancyGuard, Initializable {
         return (m.title, m.description, m.amount, m.deadline, uint8(m.status));
     }
 
+    function completeMilestone(uint256 _index) external onlyWorker jobActive {
+    if (_index >= milestones.length) revert InvalidMilestone();
+    if (_index != currentMilestoneIndex) revert InvalidMilestone();
+    if (milestones[_index].status != MilestoneStatus.InProgress) revert InvalidMilestone();
+    
+    milestones[_index].status = MilestoneStatus.Completed;
+    emit MilestoneUpdate(_index, MilestoneStatus.Completed);
+}
+
+
+
     function getPaymentInfo() external view returns (
         uint256 _totalPayment,
         uint256 paidAmount,

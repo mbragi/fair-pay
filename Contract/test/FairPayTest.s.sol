@@ -277,18 +277,47 @@ contract JobLifecycleTest is FairPayTest {
         vm.prank(orgOwner);
         IJobEscrow(jobAddress).setMilestones(indices, titles, descs, amounts, deadlines);
         
-        // Deposit funds
         vm.prank(orgOwner);
         IJobEscrow(jobAddress).depositFunds();
 
+
         vm.prank(orgOwner);
         IJobEscrow(jobAddress).assignWorker(worker);
-        
+
         
         // Verify job is active
         (,,,,,uint8 status,,,bool isFunded) = IJobEscrow(jobAddress).getJobDetails();
         assertEq(status, uint8(IJobEscrow.JobStatus.InProgress));
         assertEq(isFunded, true);
+    }
+
+    function test_ResolveDispute_ErrorConditions() public {
+  
+        test_JobFundingAndMilestones();
+        
+        vm.prank(orgOwner);
+        IJobEscrow(jobAddress).assignWorker(worker);
+        
+        vm.prank(worker);
+        IJobEscrow(jobAddress).confirmJob();
+        
+        vm.prank(worker);
+        (bool success, bytes memory data) = jobAddress.call(
+            abi.encodeWithSignature(
+                "resolveDispute(uint256,bool,uint256)", 
+                0, 
+                true, 
+                0 
+            )
+        );
+        
+        assertFalse(success, "Non-platform address should not be able to call resolveDispute");
+        
+        if (data.length > 4) {
+            bytes4 errorSelector = bytes4(data);
+            bytes4 onlyPlatformSelector = bytes4(keccak256("OnlyPlatform()"));
+            assertEq(errorSelector, onlyPlatformSelector, "Should revert with OnlyPlatform error");
+        }
     }
 }
 
