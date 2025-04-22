@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 const HeroSection: React.FC = () => {
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-gradient-to-r from-indigo-50 to-blue-50 h-full md:h-screen">
       <div className=" mx-auto px-4 sm:px-6 lg:px-8">
         <div className="h-screen pt-12 md:pt-0">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center h-full pb-24">
@@ -52,7 +52,7 @@ const HeroSection: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div>
+            <div className='hidden md:block rounded-full overflow-hidden'>
                 <img src="/6168236.jpg" alt="" />
             </div>
           </div>

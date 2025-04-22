@@ -16,7 +16,7 @@ const AccountDetails = () => {
   if (!address) return null;
 
   return (
-    <div className="w-[270px] overflow-hidden">
+    <div className="w-[190px] overflow-hidden">
       <AccountProvider address={address} client={client}>
         <ChainProvider chain={baseSepolia}>
           <div className="flex items-center justify-between gap-2">
@@ -26,7 +26,10 @@ const AccountDetails = () => {
               <AccountAddress className="font-mono text-sm text-gray-800 truncate max-w-[100px]" />
             </div>
             <button
-              onClick={disconnect}
+              onClick={() => {
+                disconnect();
+                window.location.pathname = "/";
+              }}
               className="bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-600 whitespace-nowrap"
             >
               Logout

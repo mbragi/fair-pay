@@ -2,6 +2,7 @@ import { useSendTransaction } from "thirdweb/react";
 import { prepareContractCall, getContract } from "thirdweb";
 import { client } from "../client";
 import { baseSepolia } from "thirdweb/chains";
+import { parseEther } from 'ethers/lib/utils';
 import { FairPayCore } from "../abis/addresses";
 
 export const useCreateJob = () => {
@@ -11,7 +12,7 @@ export const useCreateJob = () => {
     client,
   });
 
-  const { mutateAsync, isPending, error } = useSendTransaction();
+  const { mutateAsync, isPending, error, data } = useSendTransaction();
 
   const createJob = async (
     orgId: number,
@@ -29,7 +30,7 @@ export const useCreateJob = () => {
         BigInt(orgId),
         title,
         description,
-        BigInt(totalPayment),
+        BigInt(parseEther(totalPayment).toString()),
         BigInt(milestoneCount),
         tokenAddress,
       ],
@@ -37,5 +38,5 @@ export const useCreateJob = () => {
     return await mutateAsync(tx);
   };
 
-  return { createJob, isPending, error };
+  return { createJob, isPending, error, data };
 };

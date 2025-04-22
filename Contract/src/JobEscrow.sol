@@ -31,6 +31,7 @@ contract JobEscrow is ReentrancyGuard, Initializable {
     error InvalidAmount();
     error WorkerAlreadyAssigned();
     error OnlyAssignedWorker();
+    error JobNotFunded();
 
     
     address public platform;
@@ -45,8 +46,8 @@ contract JobEscrow is ReentrancyGuard, Initializable {
     uint256 public platformFee;
     uint256 public createdAt;
     address public worker;
-    bool public workerConfirmed;
     uint256 public currentMilestoneIndex;
+    bool public isFunded;
     
     struct Milestone {
         string title;
@@ -73,6 +74,7 @@ contract JobEscrow is ReentrancyGuard, Initializable {
     event DisputeRaise(uint256 index);
     event DisputeResolve(uint256 index, bool workerFavored);
     event WorkerAssigned(address worker);
+    event JobFunded();
 
     function initialize(
         address _platform,
@@ -97,6 +99,7 @@ contract JobEscrow is ReentrancyGuard, Initializable {
         platformFee = _platformFee;
         status = JobStatus.Created;
         createdAt = block.timestamp;
+        isFunded = false;
         
         for (uint256 i = 0; i < _milestoneCount; i++) {
             milestones.push(Milestone("", "", 0, 0, MilestoneStatus.NotStarted));
@@ -109,12 +112,17 @@ contract JobEscrow is ReentrancyGuard, Initializable {
     }
     
     modifier onlyWorker() {
-        if (!(msg.sender == worker && workerConfirmed)) revert OnlyWorker();
+        if (!(msg.sender == worker)) revert OnlyWorker();
         _;
     }
     
     modifier jobActive() {
         if (status != JobStatus.InProgress) revert JobNotActive();
+        _;
+    }
+
+    modifier requireFunded() {
+        if (!isFunded) revert JobNotFunded();
         _;
     }
 
@@ -127,16 +135,26 @@ contract JobEscrow is ReentrancyGuard, Initializable {
             if (msg.value != 0) revert InvalidAddress();
             IERC20(token).safeTransferFrom(msg.sender, address(this), totalPayment);
         }
-        emit FundsDeposited(msg.sender, msg.value);
+        
+        isFunded = true;
+        emit FundsDeposited(msg.sender, totalPayment);
+        emit JobFunded();
     }
 
-    function assignWorker(address _worker) external onlyEmployer {
+    function assignWorker(address _worker) external onlyEmployer requireFunded  {
         if (status != JobStatus.Created) revert JobStarted();
         if (_worker == address(0)) revert InvalidAddress();
         if (worker != address(0)) revert WorkerAlreadyAssigned();
         
         worker = _worker;
+        status = JobStatus.InProgress;
+        milestones[0].status = MilestoneStatus.InProgress;
+        
+        // Automatically register with FairPayCore
+        IFairPayCore(platform).registerWorkerJob(_worker);
+        
         emit WorkerAssigned(_worker);
+        emit JobStart(_worker);
     }
     
     function setMilestones(
@@ -147,7 +165,6 @@ contract JobEscrow is ReentrancyGuard, Initializable {
         uint256[] calldata _deadlines
     ) external onlyEmployer {
         if (status != JobStatus.Created) revert JobStarted();
-        if (workerConfirmed) revert AlreadyConfirmed();
         if (_indices.length != _titles.length || 
             _indices.length != _amounts.length || 
             _indices.length != _deadlines.length) revert InvalidArrayLength();
@@ -172,33 +189,14 @@ contract JobEscrow is ReentrancyGuard, Initializable {
         emit MilestonesSet(_indices, _titles, _amounts, _deadlines);
     }
     
-    function confirmJob() external {
-        if (msg.sender != worker) revert OnlyWorker();
-        if (workerConfirmed) revert AlreadyConfirmed();
-        if (status != JobStatus.Created) revert JobStarted();
-        if (msg.sender != worker) revert OnlyAssignedWorker();
-        if (workerConfirmed) revert AlreadyConfirmed();
-        if (status != JobStatus.Created) revert JobStarted();
+
+    function completeMilestone(uint256 _index) external onlyWorker jobActive {
+        if (_index >= milestones.length) revert InvalidMilestone();
+        if (_index != currentMilestoneIndex) revert InvalidMilestone();
+        if (milestones[_index].status != MilestoneStatus.InProgress) revert InvalidMilestone();
         
-        // Verify all milestones are properly set
-        for (uint256 i = 0; i < milestones.length; i++) {
-            if (bytes(milestones[i].title).length == 0 || milestones[i].amount == 0) {
-                revert InvalidMilestone();
-            }
-        }
-        
-        // Verify funding
-        if (token == address(0)) {
-            if (address(this).balance < totalPayment) revert InsufficientFunds();
-        } else {
-            if (IERC20(token).balanceOf(address(this)) < totalPayment) revert InsufficientFunds();
-        }
-        
-        workerConfirmed = true;
-        status = JobStatus.InProgress;
-        milestones[0].status = MilestoneStatus.InProgress;
-        IFairPayCore(platform).registerWorkerJob(worker);
-        emit JobStart(worker);
+        milestones[_index].status = MilestoneStatus.Completed;
+        emit MilestoneUpdate(_index, MilestoneStatus.Completed);
     }
     
     function approveMilestone(uint256 _index) external onlyEmployer jobActive nonReentrant {
@@ -208,8 +206,15 @@ contract JobEscrow is ReentrancyGuard, Initializable {
         uint256 amount = milestones[_index].amount;
         uint256 fee = amount * platformFee / 10000;
         
-        IERC20(token).safeTransfer(worker, amount - fee);
-        IERC20(token).safeTransfer(platform, fee);
+        if (token == address(0)) {
+            (bool success, ) = worker.call{value: amount - fee}("");
+            require(success, "ETH transfer failed");
+            (bool platformSuccess, ) = platform.call{value: fee}("");
+            require(platformSuccess, "Platform fee transfer failed");
+        } else {
+            IERC20(token).safeTransfer(worker, amount - fee);
+            IERC20(token).safeTransfer(platform, fee);
+        }
         
         emit Payment(worker, amount - fee);
         
@@ -235,18 +240,39 @@ contract JobEscrow is ReentrancyGuard, Initializable {
         uint256 amount = milestones[_index].amount;
         if (_workerFavored) {
             uint256 fee = amount * platformFee / 10000;
-            IERC20(token).safeTransfer(worker, amount - fee);
-            IERC20(token).safeTransfer(platform, fee);
+            if (token == address(0)) {
+                (bool success, ) = worker.call{value: amount - fee}("");
+                require(success, "ETH transfer failed");
+                (bool platformSuccess, ) = platform.call{value: fee}("");
+                require(platformSuccess, "Platform fee transfer failed");
+            } else {
+                IERC20(token).safeTransfer(worker, amount - fee);
+                IERC20(token).safeTransfer(platform, fee);
+            }
             emit Payment(worker, amount - fee);
         } else {
             if (_employerRefund > amount) revert InvalidRefund();
-            if (_employerRefund > 0) IERC20(token).safeTransfer(employer, _employerRefund);
+            if (_employerRefund > 0) {
+                if (token == address(0)) {
+                    (bool success, ) = employer.call{value: _employerRefund}("");
+                    require(success, "ETH refund failed");
+                } else {
+                    IERC20(token).safeTransfer(employer, _employerRefund);
+                }
+            }
             
             uint256 remaining = amount - _employerRefund;
             if (remaining > 0) {
                 uint256 fee = remaining * platformFee / 10000;
-                IERC20(token).safeTransfer(worker, remaining - fee);
-                IERC20(token).safeTransfer(platform, fee);
+                if (token == address(0)) {
+                    (bool success, ) = worker.call{value: remaining - fee}("");
+                    require(success, "ETH transfer failed");
+                    (bool platformSuccess, ) = platform.call{value: fee}("");
+                    require(platformSuccess, "Platform fee transfer failed");
+                } else {
+                    IERC20(token).safeTransfer(worker, remaining - fee);
+                    IERC20(token).safeTransfer(platform, fee);
+                }
                 emit Payment(worker, remaining - fee);
             }
         }
@@ -263,22 +289,30 @@ contract JobEscrow is ReentrancyGuard, Initializable {
 
     function cancelJob() external onlyEmployer nonReentrant {
         if (status != JobStatus.Created) revert JobStarted();
-        if (workerConfirmed) revert AlreadyConfirmed();
         
         status = JobStatus.Cancelled;
-        uint256 balance = token == address(0) 
-            ? address(this).balance 
-            : IERC20(token).balanceOf(address(this));
         
-        if (balance > 0) {
-            IERC20(token).safeTransfer(employer, balance);
+        // Return funds if the job was funded
+        if (isFunded) {
+            uint256 balance = token == address(0) 
+                ? address(this).balance 
+                : IERC20(token).balanceOf(address(this));
+            
+            if (balance > 0) {
+                if (token == address(0)) {
+                    (bool success, ) = employer.call{value: balance}("");
+                    require(success, "ETH refund failed");
+                } else {
+                    IERC20(token).safeTransfer(employer, balance);
+                }
+            }
         }
         emit JobCancel();
     }
 
     function getJobDetails() external view returns (
         address, address, string memory, string memory, 
-        uint256, uint8, uint256, uint256
+        uint256, uint8, uint256, uint256, bool _isFunded
     ) {
         return (
             employer,
@@ -288,8 +322,13 @@ contract JobEscrow is ReentrancyGuard, Initializable {
             totalPayment,
             uint8(status),
             milestones.length,
-            currentMilestoneIndex
+            currentMilestoneIndex,
+            isFunded
         );
+    }
+
+    function isJobFunded() external view returns (bool) {
+        return isFunded;
     }
 
     function getMilestone(uint256 index) external view returns (
@@ -335,5 +374,31 @@ contract JobEscrow is ReentrancyGuard, Initializable {
             totalPayment - paid,
             fee
         );
+    }
+
+    function getAllMilestones() external view returns (
+        string[] memory titles,
+        string[] memory descriptions, 
+        uint256[] memory amounts,
+        uint256[] memory deadlines,
+        uint8[] memory statuses
+    ) {
+        uint256 milestoneCount = milestones.length;
+        titles = new string[](milestoneCount);
+        descriptions = new string[](milestoneCount);
+        amounts = new uint256[](milestoneCount);
+        deadlines = new uint256[](milestoneCount);
+        statuses = new uint8[](milestoneCount);
+        
+        for (uint256 i = 0; i < milestoneCount; i++) {
+            Milestone memory m = milestones[i];
+            titles[i] = m.title;
+            descriptions[i] = m.description;
+            amounts[i] = m.amount;
+            deadlines[i] = m.deadline;
+            statuses[i] = uint8(m.status);
+        }
+        
+        return (titles, descriptions, amounts, deadlines, statuses);
     }
 }

@@ -96,12 +96,9 @@ contract FairPayCore is Ownable, ReentrancyGuard {
     function registerWorkerJob(address _worker) external {
         require(validJobContracts[msg.sender], "Caller is not a valid job contract");
         
-        // Verify that the worker is actually assigned to this job
-        (, address assignedWorker,,,,,,) = IJobEscrow(msg.sender).getJobDetails();
+        // just verify worker is assigned
+        (, address assignedWorker,,,,,,,) = IJobEscrow(msg.sender).getJobDetails();
         require(assignedWorker == _worker, "Worker not assigned to this job");
-        
-        // additional check to ensure the worker has confirmed the job
-        require(IJobEscrow(msg.sender).workerConfirmed(), "Worker has not confirmed this job");
         
         workerJobs[_worker].push(msg.sender);
         emit WorkerAssigned(_worker, msg.sender);
@@ -151,6 +148,7 @@ contract FairPayCore is Ownable, ReentrancyGuard {
                 uint8 status,
                 ,  // milestoneCount
                    // currentMilestone
+                ,
             ) = IJobEscrow(jobs[i]).getJobDetails();
             
             titles[i] = title;
@@ -188,7 +186,7 @@ contract FairPayCore is Ownable, ReentrancyGuard {
         require(validJobContracts[_jobAddress], "Invalid job contract");
         
         IJobEscrow job = IJobEscrow(_jobAddress);
-        (, , , , uint256 payment, , uint256 milestoneCount, ) = job.getJobDetails();
+        (, , , , uint256 payment, , uint256 milestoneCount,, ) = job.getJobDetails();
         
         // Calculate paid amount
         uint256 paid;
@@ -205,6 +203,11 @@ contract FairPayCore is Ownable, ReentrancyGuard {
             paid,
             payment - paid
         );
+    }
+
+    function isJobFunded(address _jobAddress) external view returns (bool) {
+        require(validJobContracts[_jobAddress], "Invalid job contract");
+        return IJobEscrow(_jobAddress).isJobFunded();
     }
     
     receive() external payable {}

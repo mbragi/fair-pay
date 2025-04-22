@@ -109,9 +109,20 @@ contract OrganizationTest is FairPayTest {
         assertTrue(orgManager.isValidOrganization(orgId));
         assertTrue(orgManager.isOrganizationMember(orgId, orgOwner));
         
-        (uint256[] memory ids, string[] memory names, , , ) = orgManager.getOrganizationsByOwner(orgOwner);
+        (uint256[] memory ids, string[] memory names, , , ) = fairPay.getOrganizationsByOwner(orgOwner);
         assertEq(ids[0], orgId);
         assertEq(names[0], "Test Org");
+
+        vm.prank(orgOwner);
+        uint256 orgId2 = fairPay.createOrganization("Test Org1", "Test Description");
+        
+        // Verify organization creation
+        assertTrue(orgManager.isValidOrganization(orgId2));
+        assertTrue(orgManager.isOrganizationMember(orgId2, orgOwner));
+        
+        (uint256[] memory ids1, string[] memory names1, , , ) = fairPay.getOrganizationsByOwner(orgOwner);
+        assertEq(ids1[1], orgId2);
+        assertEq(names1[1], "Test Org1");
     }
     
     function test_AddRemoveMember() public {
@@ -166,10 +177,11 @@ contract JobLifecycleTest is FairPayTest {
         assertTrue(fairPay.validJobContracts(jobAddress));
         
         // Verify job details
-        (address employer, , string memory title, , uint256 payment, , , ) = IJobEscrow(jobAddress).getJobDetails();
+        (address employer, , string memory title, , uint256 payment, , ,, bool isFunded) = IJobEscrow(jobAddress).getJobDetails();
         assertEq(employer, orgOwner);
         assertEq(title, "Web Development");
         assertEq(payment, 1 ether);
+        assertEq(isFunded, false);
     }
     
     function test_JobFundingAndMilestones() public {
@@ -218,9 +230,7 @@ contract JobLifecycleTest is FairPayTest {
         vm.prank(orgOwner);
         IJobEscrow(jobAddress).assignWorker(worker);
         
-        // Worker confirms job
-        vm.prank(worker);
-        IJobEscrow(jobAddress).confirmJob();
+        
         
         // Complete milestones
         for (uint256 i = 0; i < 3; i++) {
@@ -242,16 +252,13 @@ contract JobLifecycleTest is FairPayTest {
         }
         
         // Verify job completion
-        (, , , , , uint8 status, , ) = IJobEscrow(jobAddress).getJobDetails();
+        (, , , , , uint8 status, , ,bool isFunded) = IJobEscrow(jobAddress).getJobDetails();
         assertEq(uint256(status), uint256(IJobEscrow.JobStatus.Completed));
+        assertEq(isFunded, true);
     }
 
     function test_CompleteJobFlow01() public {
       
-        vm.prank(orgOwner);
-        IJobEscrow(jobAddress).assignWorker(worker);
-        
-        
         uint256[] memory indices = new uint256[](3);
         string[] memory titles = new string[](3);
         string[] memory descs = new string[](3);
@@ -272,12 +279,16 @@ contract JobLifecycleTest is FairPayTest {
         
         vm.prank(orgOwner);
         IJobEscrow(jobAddress).depositFunds();
-        vm.prank(worker);
-        IJobEscrow(jobAddress).confirmJob();
+
+
+        vm.prank(orgOwner);
+        IJobEscrow(jobAddress).assignWorker(worker);
+
         
         // Verify job is active
-        (,,,,,uint8 status,,) = IJobEscrow(jobAddress).getJobDetails();
+        (,,,,,uint8 status,,,bool isFunded) = IJobEscrow(jobAddress).getJobDetails();
         assertEq(status, uint8(IJobEscrow.JobStatus.InProgress));
+        assertEq(isFunded, true);
     }
 
     function test_ResolveDispute_ErrorConditions() public {
@@ -308,6 +319,185 @@ contract JobLifecycleTest is FairPayTest {
             assertEq(errorSelector, onlyPlatformSelector, "Should revert with OnlyPlatform error");
         }
     }
+}
+
+contract DisputeAndCancellationTest is FairPayTest {
+    uint256 public orgId;
+    address public jobAddress;
+    
+    function setUp() public override {
+        super.setUp();
+        
+        // Mint tokens to the organization owner
+        testToken.mint(orgOwner, 10 ether);
+        
+        // Create organization
+        vm.prank(orgOwner);
+        orgId = fairPay.createOrganization("Test Org", "Test Description");
+       
+        // Create job
+        vm.prank(orgOwner);
+        jobAddress = fairPay.createJob(
+            orgId,
+            "Web Development",
+            "Build a website",
+            1 ether,
+            3, // milestones
+            address(testToken)
+        );
+        
+        // Approve job contract to spend tokens
+        vm.prank(orgOwner);
+        testToken.approve(jobAddress, 2 ether);
+    }
+    
+    function setupJobWithMilestones() public {
+        // Fund the job
+        vm.startPrank(orgOwner);
+        testToken.approve(jobAddress, 1 ether);
+        IJobEscrow(jobAddress).depositFunds();
+        vm.stopPrank();
+        
+        // Setup milestones
+        uint256[] memory indices = new uint256[](3);
+        string[] memory titles = new string[](3);
+        string[] memory descriptions = new string[](3);
+        uint256[] memory amounts = new uint256[](3);
+        uint256[] memory deadlines = new uint256[](3);
+        
+        // Create three milestones with equal distribution
+        for (uint256 i = 0; i < 3; i++) {
+            indices[i] = i;
+            titles[i] = string(abi.encodePacked("Milestone ", vm.toString(i + 1)));
+            descriptions[i] = string(abi.encodePacked("Description for milestone ", vm.toString(i + 1)));
+            amounts[i] = 0.33 ether;
+            deadlines[i] = block.timestamp + (i + 1) * 1 weeks;
+        }
+        // Adjust the last milestone to make the total exactly 1 ether
+        amounts[2] = 0.34 ether;
+        
+        vm.prank(orgOwner);
+        IJobEscrow(jobAddress).setMilestones(indices, titles, descriptions, amounts, deadlines);
+        
+        // Assign worker
+        vm.prank(orgOwner);
+        IJobEscrow(jobAddress).assignWorker(worker);
+    }
+    
+    
+    
+    function test_DisputeResolutionWorkerFavored() public {
+        // Setup job with funding and milestones
+        setupJobWithMilestones();
+        
+        
+        
+        // Worker completes first milestone
+        vm.prank(worker);
+        IJobEscrow(jobAddress).completeMilestone(0);
+        
+        // Capture worker's balance before dispute resolution
+        uint256 workerBalanceBefore = testToken.balanceOf(worker);
+        
+        // Assume first milestone is now in a disputed state
+        // This would normally happen through a dispute process that isn't shown here
+        // We'll simulate by directly calling resolveDispute from platform admin
+        
+        vm.prank(address(fairPay));
+        IJobEscrow(jobAddress).resolveDispute(0, true, 0);
+        
+        // Verify worker received payment
+        uint256 workerBalanceAfter = testToken.balanceOf(worker);
+        uint256 expectedPayment = 0.33 ether * (10000 - feesManager.getPlatformFee()) / 10000;
+        assertEq(workerBalanceAfter - workerBalanceBefore, expectedPayment);
+        
+        // Verify milestone status is now completed and next milestone is in progress
+        (, , , , uint8 milestone0Status) = IJobEscrow(jobAddress).getMilestone(0);
+        (, , , , uint8 milestone1Status) = IJobEscrow(jobAddress).getMilestone(1);
+        
+        // First milestone should be completed now
+        assertEq(milestone0Status, uint8(IJobEscrow.MilestoneStatus.Completed));
+        
+        // Second milestone should be in progress
+        assertEq(milestone1Status, uint8(IJobEscrow.MilestoneStatus.InProgress));
+    }
+    
+    function test_DisputeResolutionEmployerFavored() public {
+        // Setup job with funding and milestones
+        setupJobWithMilestones();
+        
+       
+        
+        // Worker completes first milestone
+        vm.prank(worker);
+        IJobEscrow(jobAddress).completeMilestone(0);
+        
+        // Capture balances before dispute resolution
+        uint256 workerBalanceBefore = testToken.balanceOf(worker);
+        uint256 employerBalanceBefore = testToken.balanceOf(orgOwner);
+        
+        // Employer favored with partial refund (half the milestone amount)
+        uint256 employerRefund = 0.165 ether; // Half of 0.33 ether
+        
+        vm.prank(address(fairPay));
+        IJobEscrow(jobAddress).resolveDispute(0, false, employerRefund);
+        
+        // Verify employer received refund
+        uint256 employerBalanceAfter = testToken.balanceOf(orgOwner);
+        assertEq(employerBalanceAfter - employerBalanceBefore, employerRefund);
+        
+        // Verify worker received reduced payment
+        uint256 workerBalanceAfter = testToken.balanceOf(worker);
+        uint256 remainingForWorker = 0.33 ether - employerRefund;
+        uint256 expectedPayment = remainingForWorker * (10000 - feesManager.getPlatformFee()) / 10000;
+        assertEq(workerBalanceAfter - workerBalanceBefore, expectedPayment);
+        
+        // Verify next milestone is now in progress
+        (, , , , uint8 milestone1Status) = IJobEscrow(jobAddress).getMilestone(1);
+        assertEq(milestone1Status, uint8(IJobEscrow.MilestoneStatus.InProgress));
+    }
+    
+    function test_DisputeResolutionEmptyEmployerRefund() public {
+        // Setup job with funding and milestones
+        setupJobWithMilestones();
+        
+        
+        
+        // Worker completes first milestone
+        vm.prank(worker);
+        IJobEscrow(jobAddress).completeMilestone(0);
+        
+        // Capture balances before dispute resolution
+        uint256 workerBalanceBefore = testToken.balanceOf(worker);
+        
+        // Employer gets no refund, but decision is still employer-favored (e.g., no penalties)
+        vm.prank(address(fairPay));
+        IJobEscrow(jobAddress).resolveDispute(0, false, 0);
+        
+        // Verify worker still received full payment
+        uint256 workerBalanceAfter = testToken.balanceOf(worker);
+        uint256 expectedPayment = 0.33 ether * (10000 - feesManager.getPlatformFee()) / 10000;
+        assertEq(workerBalanceAfter - workerBalanceBefore, expectedPayment);
+    }
+    
+    function test_InvalidDisputeResolution() public {
+        // Setup job with funding and milestones
+        setupJobWithMilestones();
+        
+       
+        
+        // Test 1: Non-platform account cannot resolve dispute
+        vm.expectRevert();
+        vm.prank(otherUser);
+        IJobEscrow(jobAddress).resolveDispute(0, true, 0);
+        
+        // Test 2: Cannot resolve dispute with excessive refund
+        vm.expectRevert();
+        vm.prank(address(fairPay));
+        IJobEscrow(jobAddress).resolveDispute(0, false, 1 ether); // More than milestone amount
+    }
+
+    // NOTE: tests are assuming that the milestone status is already Disputed, but there's no code in your test that actually sets the milestone status to Disputed
 }
 
 

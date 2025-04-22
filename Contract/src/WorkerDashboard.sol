@@ -21,10 +21,10 @@ contract WorkerDashboard is Ownable {
         string title;
         string description;
         uint256 totalPayment;
-        IJobEscrow.JobStatus status;
+        uint8 status;
         uint256 milestoneCount;
         uint256 currentMilestone;
-        MilestoneInfo[] milestones;
+        bool isFunded;
     }
     
     constructor(address _fairPayCore) Ownable(msg.sender) {
@@ -38,8 +38,8 @@ contract WorkerDashboard is Ownable {
     function getMyJobs() external view returns (address[] memory) {
         return fairPayCore.getWorkerJobs(msg.sender);
     }
-    
-    function getJobDetails(address _jobAddress) external view returns (JobInfo memory job) {
+
+    function getJobBasicDetails(address _jobAddress) external view returns (JobInfo memory) {
         require(fairPayCore.isWorkerAssignedToJob(msg.sender, _jobAddress), "Job not assigned to caller");
         
         IJobEscrow jobEscrow = IJobEscrow(_jobAddress);
@@ -53,43 +53,59 @@ contract WorkerDashboard is Ownable {
             uint256 totalPayment,
             uint8 status,
             uint256 milestoneCount,
-            uint256 currentMilestone
+            uint256 currentMilestone,
+            bool jobFunded
         ) = jobEscrow.getJobDetails();
         
-        // Get milestone details
-        (
-            string[] memory milestoneTitles,
-            string[] memory milestoneDescriptions,
-            uint256[] memory milestoneAmounts,
-            uint256[] memory milestoneDeadlines,
-            uint8[] memory milestoneStatuses
-        ) = jobEscrow.getAllMilestones();
-        
-        // Create milestone info array
-        MilestoneInfo[] memory milestones = new MilestoneInfo[](milestoneCount);
-        for (uint256 i = 0; i < milestoneCount; i++) {
-            milestones[i] = MilestoneInfo({
-                title: milestoneTitles[i],
-                description: milestoneDescriptions[i],
-                amount: milestoneAmounts[i],
-                deadline: milestoneDeadlines[i],
-                status: milestoneStatuses[i]
-            });
-        }
-        
         // Create and return job info struct
+        JobInfo memory job;
         job.jobAddress = _jobAddress;
         job.employer = employer;
         job.title = title;
         job.description = description;
         job.totalPayment = totalPayment;
-        job.status = IJobEscrow.JobStatus(status);
+        job.status = status;
         job.milestoneCount = milestoneCount;
         job.currentMilestone = currentMilestone;
-        job.milestones = milestones;
+        job.isFunded = jobFunded;
         
         return job;
     }
+
+    function getJobMilestones(address _jobAddress) external view returns (MilestoneInfo[] memory) {
+        require(fairPayCore.isWorkerAssignedToJob(msg.sender, _jobAddress), "Job not assigned to caller");
+        
+        IJobEscrow jobEscrow = IJobEscrow(_jobAddress);
+        
+        // Get job milestone count
+        (,,,,,, uint256 milestoneCount,,) = jobEscrow.getJobDetails();
+        
+        // Create milestone info array
+        MilestoneInfo[] memory milestones = new MilestoneInfo[](milestoneCount);
+        
+        // Populate milestone details one by one to avoid stack depth issues
+        for (uint256 i = 0; i < milestoneCount; i++) {
+            (
+                string memory title,
+                string memory description,
+                uint256 amount,
+                uint256 deadline,
+                uint8 status
+            ) = jobEscrow.getMilestone(i);
+            
+            milestones[i] = MilestoneInfo({
+                title: title,
+                description: description,
+                amount: amount,
+                deadline: deadline,
+                status: status
+            });
+        }
+        
+        return milestones;
+    }
+    
+    
     
     function getWorkerJobs(address _worker) external view onlyOwner returns (address[] memory) {
         return fairPayCore.getWorkerJobs(_worker);

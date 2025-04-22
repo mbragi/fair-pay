@@ -22,7 +22,7 @@ interface IJobEscrow {
     enum JobStatus { Created, InProgress, Completed, Cancelled }
     enum MilestoneStatus { NotStarted, InProgress, Completed, Disputed }
 
-    function workerConfirmed() external view returns (bool);
+   
     function getMilestone(uint256 index) external view returns (
         string memory _title,
         string memory _description,
@@ -31,8 +31,9 @@ interface IJobEscrow {
         uint8 _status
     );
     function token() external view returns (address);
+    function isJobFunded() external view returns (bool);
     function assignWorker(address _worker) external;
-    function confirmJob() external;
+    function cancelJob() external;
     function completeMilestone(uint256 index) external;
     function approveMilestone(uint256 index) external;
     function getPaymentInfo() external view returns (
@@ -41,6 +42,11 @@ interface IJobEscrow {
         uint256 remainingAmount,
         uint256 platformFeeAmount
     );
+    function resolveDispute(
+        uint256 _index, 
+        bool _workerFavored,
+        uint256 _employerRefund
+    ) external;
     function depositFunds() external payable;
     function setMilestones(
         uint256[] calldata _indices,
@@ -57,7 +63,8 @@ interface IJobEscrow {
         uint256 _totalPayment,
         uint8 _status,
         uint256 _milestoneCount,
-        uint256 _currentMilestone
+        uint256 _currentMilestone,
+        bool _isFunded
     );
     
     function getAllMilestones() external view returns (
@@ -68,13 +75,7 @@ interface IJobEscrow {
         uint8[] memory statuses
     );
 
-    function resolveDispute(
-        uint256 _index, 
-        bool _workerFavored,
-        uint256 _employerRefund
-    ) external;
-    
-}
+
 
 interface IWorkerDashboard {
     struct JobInfo {

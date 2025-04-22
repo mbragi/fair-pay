@@ -158,6 +158,15 @@
     },
     {
       "type": "function",
+      "name": "isJobFunded",
+      "inputs": [
+        { "name": "_jobAddress", "type": "address", "internalType": "address" }
+      ],
+      "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
       "name": "isWorkerAssignedToJob",
       "inputs": [
         { "name": "_worker", "type": "address", "internalType": "address" },

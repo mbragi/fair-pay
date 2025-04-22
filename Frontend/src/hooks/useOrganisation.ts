@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { baseSepolia } from "thirdweb/chains";
 import { getContract, prepareContractCall, readContract } from "thirdweb";
 import { useSendTransaction } from "thirdweb/react";
-import { OrganizationManager } from "../abis/addresses";
+import { FairPayCore } from "../abis/addresses";
 import { useAuth } from "../context/AuthContext";
 import { client } from "../client";
 
@@ -17,7 +17,7 @@ export interface Organization {
 }
 
 const contract = getContract({
-  address: OrganizationManager,
+  address: FairPayCore,
   chain: baseSepolia,
   client,
 });
@@ -31,7 +31,6 @@ export const useOrganizations = () => {
 
   const { mutateAsync: sendTx, isPending } = useSendTransaction();
 
-  // 📤 WRITE METHODS
   const createOrganization = async (name: string, description: string) => {
     const tx = prepareContractCall({
       contract,
@@ -84,11 +83,10 @@ export const useOrganizations = () => {
       const [ids, names, descriptions, statuses, timestamps] =
         await readContract({
           contract,
-          method:
-            "function getOrganizationsByOwner(address) returns (uint256[],string[],string[],bool[],uint256[])",
+          method: "function getOrganizationsByOwner(address) returns (uint256[],string[],string[],bool[],uint256[])",
           params: [owner],
         });
-
+  
       const mapped: Organization[] = ids.map((id: bigint, i: number) => ({
         id: Number(id),
         name: names[i],
@@ -98,7 +96,7 @@ export const useOrganizations = () => {
         createdAt: Number(timestamps[i]),
         isOwner: address?.toLowerCase() === owner.toLowerCase(),
       }));
-
+  
       setOrganizations(mapped);
     } catch (err) {
       console.error("Failed to fetch organizations", err);
@@ -137,10 +135,11 @@ export const useOrganizations = () => {
     setOrganizations,
     loading,
     isPending,
+    refetch: () => address ? fetchOrganizationsByOwner(address) : Promise.resolve(),
 
     // exposed methods
-   createOrganization,
-   fetchOrganizationJobs,
+    createOrganization,
+    fetchOrganizationJobs,
     addJobToOrganization,
     addMember,
     getOrganizationJobs,

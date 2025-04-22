@@ -1,22 +1,62 @@
+import React from "react";
+import { ethers } from "ethers";
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Job } from "../../types/generated";
+import { formatEth } from "../../utils/contractUtils";
 
-const JobDetailsModal = ({ isOpen, job, onClose }: any) => {
- if (!isOpen || !job) return null;
+interface Props {
+  isOpen: boolean;
+  job: Job;
+  onClose: () => void;
+}
 
- return (
-  <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
-   <div className="bg-white p-8 rounded-lg max-w-lg w-full shadow-xl">
-    <h3 className="text-xl font-bold mb-4">{job.title}</h3>
-    <p className="text-gray-700 mb-4">{job.description}</p>
-    <p className="text-sm text-gray-500">Total Payment: {job.totalPayment} ETH</p>
-    <div className="mt-6 flex justify-end">
-     <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-gray-800">
-      Close
-     </button>
+
+
+const JobDetailsModal: React.FC<Props> = ({ isOpen, job, onClose }) => {
+  if (!isOpen) return null;
+
+  const { title, description, totalPayment, worker } = job;
+  const formattedPayment = formatEth(totalPayment);
+  const workerDisplay =
+    worker?.toLowerCase() === ethers.constants.AddressZero.toLowerCase()
+      ? "Unassigned"
+      : worker;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
+      <div className="bg-white p-6 rounded-lg max-w-md w-full shadow-xl">
+        <header className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold">{title}</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+            aria-label="Close modal"
+          >
+            ✕
+          </button>
+        </header>
+
+        <section className="space-y-4">
+          <p className="text-gray-700">{description}</p>
+          <p className="text-sm text-gray-500">
+            <span className="font-medium">Total Payment:</span> {formattedPayment}
+          </p>
+          <p className="text-sm text-gray-500">
+            <span className="font-medium">Worker:</span> {workerDisplay}
+          </p>
+        </section>
+
+        <footer className="mt-6 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+          >
+            Close
+          </button>
+        </footer>
+      </div>
     </div>
-   </div>
-  </div>
- );
+  );
 };
 
 export default JobDetailsModal;

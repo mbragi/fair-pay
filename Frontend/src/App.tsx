@@ -6,6 +6,8 @@ import ClientPage from "./page/client-page/client-page";
 import ServiceProviderDashboard from "./page/employees-page/ServiceProviderDashboard";
 import { ThirdwebProvider } from "thirdweb/react"
 import { AuthProvider } from "./context/AuthContext";
+// set up sonner 
+import { Toaster } from "sonner";
 
 import {
   RouterProvider,
@@ -27,12 +29,18 @@ function App() {
       </Route>
     )
   )
-
+  
 
   return (
 
     <ThirdwebProvider >
       <AuthProvider>
+        <Toaster
+          position="top-center"
+          richColors
+          closeButton
+          theme="dark"
+         />
         <RouterProvider router={router} />
       </AuthProvider>
     </ThirdwebProvider>

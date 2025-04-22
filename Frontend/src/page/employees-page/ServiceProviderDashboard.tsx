@@ -1,391 +1,491 @@
-import { useState, useEffect } from 'react';
-
-import { Clock, CheckCircle, AlertTriangle, XCircle, FileText } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import {
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  FileText,
+  Briefcase,
+  ArrowRight,
+  Calendar,
+  DollarSign,
+  ChevronRight,
+  User,
+  Layers
+} from "lucide-react";
 import { useServiceProvider } from "../../hooks/useServiceProvider";
-
-interface Job {
-  address: `0x${string}`;
-  employer: string;
-  worker: string;
-  title: string;
-  totalPayment: string;
-  status: string;
-  currentMilestone: number;
-  milestoneCount: number;
-}
-
-interface JobDetails {
-  employer: string;
-  worker: string;
-  title: string;
-  description: string;
-  totalPayment: string;
-  status: string;
-  currentMilestone: number;
-  milestoneCount: number;
-}
-
-interface Milestone {
-  title: string;
-  description: string;
-  amount: string;
-  deadline: string;
-  status: string;
-}
-
+import { formatEth, getStatusColor, getStatusText } from "../../utils/contractUtils";
 
 const ServiceProviderDashboard = () => {
-  const { address: account, isConnected } = useAuth();
-  
   const {
     jobs,
+    loading,
+    error,
     selectedJob,
     setSelectedJob,
-    jobDetails,
+    jobSummary,
     milestones,
-    loading,
-    isPending,
-    confirmJob,
+    progress,
+    currentMilestone,
     submitMilestone,
+    isPending,
+    paymentInfo,
+    tokenName,
+    tokenSymbol,
+    tokenLoading,
   } = useServiceProvider();
-  // State
- 
-  const [activeJob, setActiveJob] = useState<`0x${string}` | null>(null);
- 
-
- 
 
 
-  useEffect(() => {
-    if (activeJob) {
-      loadJobDetails();
-    }
-  }, [activeJob]);
+  console.log("Jobs:", jobs);
+  console.log("Selected Job:", selectedJob);
+  console.log("Job Summary:", jobSummary);
+  console.log("Milestones:", milestones);
+  console.log("Progress:", progress);
+  console.log("Current Milestone:", currentMilestone);
+  console.log("Payment Info:", paymentInfo);
+  console.log("Token Name:", tokenName);
+  
 
-  const loadJobDetails = async () => {
-    if (!activeJob) return;
-    
-    try {
-      setLoading(true);
-      
-      // Mock job details for the demo
-      const mockJobDetails: JobDetails = {
-        employer: '0xabcdef123456789abcdef123456789abcdef1234',
-        worker: account as string,
-        title: 'Website Redesign for TechCorp',
-        description: 'Complete redesign of TechCorp\'s corporate website. The project includes UI/UX design, frontend development, and integration with their existing CMS system.',
-        totalPayment: '2.5',
-        status: 'InProgress',
-        currentMilestone: 1,
-        milestoneCount: 4
-      };
-      
-      const mockMilestones: Milestone[] = [
-        {
-          title: 'UI/UX Design',
-          description: 'Create wireframes and design mockups for all pages',
-          amount: '0.5',
-          deadline: '2025-04-20',
-          status: 'Completed'
-        },
-        {
-          title: 'Frontend Development',
-          description: 'Implement the approved designs with responsive layout',
-          amount: '0.8',
-          deadline: '2025-05-05',
-          status: 'InProgress'
-        },
-        {
-          title: 'CMS Integration',
-          description: 'Connect the frontend with the existing content management system',
-          amount: '0.7',
-          deadline: '2025-05-20',
-          status: 'NotStarted'
-        },
-        {
-          title: 'Testing and Launch',
-          description: 'Perform cross-browser testing and deploy to production',
-          amount: '0.5',
-          deadline: '2025-06-01',
-          status: 'NotStarted'
-        }
-      ];
-      
-      setJobDetails(mockJobDetails);
-      setMilestones(mockMilestones);
-      setLoading(false);
-    } catch (err) {
-      console.error('Error loading job details:', err);
-      setError('Failed to load job details');
-      setLoading(false);
-    }
-  };
-
-
-  const autoResolveDispute = async (milestoneIndex: number) => {
-    if (!activeJob) return;
-    
-    try {
-      setLoading(true);
-      // Mock resolution for demo
-      const updatedMilestones = [...milestones];
-      updatedMilestones[milestoneIndex] = {
-        ...updatedMilestones[milestoneIndex],
-        status: 'Completed'
-      };
-      setMilestones(updatedMilestones);
-      setLoading(false);
-    } catch (err) {
-      console.error('Error resolving dispute:', err);
-      setError('Failed to resolve dispute');
-      setLoading(false);
-    }
-  };
-
-  // Helper function to get status icon
   const getStatusIcon = (status: string) => {
-    switch(status) {
-      case 'Completed':
+    switch (status) {
+      case "Completed":
         return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'InProgress':
+      case "InProgress":
         return <Clock className="w-5 h-5 text-blue-500" />;
-      case 'Disputed':
+      case "Disputed":
         return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
-      case 'Cancelled':
+      case "Cancelled":
         return <XCircle className="w-5 h-5 text-red-500" />;
       default:
         return <FileText className="w-5 h-5 text-gray-500" />;
     }
   };
 
-  // Helper function to get progress percentage
-  const getProgressPercentage = (current: number, total: number) => {
-    return Math.round((current / total) * 100);
-  };
-
- 
-
   return (
-    <div className=" mx-auto h-screen p-6 bg-gradient-to-r from-indigo-50 to-blue-50 ">
-      <h1 className="text-3xl font-bold text-indigo-800 mb-8">Service Provider Dashboard</h1>
-      
-      {loading && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto"></div>
-            <p className="text-center mt-4 text-gray-700">Loading...</p>
-          </div>
-        </div>
-      )}
-      
-      {/* {error && (
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded shadow">
-          <div className="flex">
-            <div className="py-1"><AlertTriangle className="h-6 w-6 text-red-500 mr-3" /></div>
-            <div>
-              <p className="font-bold">Error</p>
-              <p>{error}</p>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 pt-10">
+      {/* Top Header Bar */}
+      <div className="bg-white shadow-md max-w-7xl mx-auto  border-b border-indigo-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
+              Service Provider Dashboard
+            </h1>
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-full font-medium text-sm shadow-md hover:shadow-lg transition-all">
+              My Profile
             </div>
           </div>
         </div>
-      )} */}
-      
-      
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1">
-          <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-            <div className="p-4 bg-indigo-600">
-              <h2 className="text-xl font-semibold text-white">My Assigned Jobs</h2>
-            </div>
-            
-            {jobs.length === 0 ? (
-              <div className="p-6 text-center">
-                <svg className="h-12 w-12 text-gray-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                <p className="text-gray-500">No jobs assigned yet</p>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-md overflow-hidden border border-indigo-50 transition-all hover:shadow-lg">
+            <div className="p-5 flex items-center">
+              <div className="rounded-full bg-blue-100 p-3 mr-4">
+                <Briefcase className="h-6 w-6 text-blue-600" />
               </div>
-            ) : (
-              <div className="divide-y divide-gray-200">
-                {jobs.map((job) => (
-                  <div 
-                    key={job.address}
-                    className={`p-4 cursor-pointer transition-colors hover:bg-indigo-50 ${activeJob === job.address ? 'bg-indigo-100 border-l-4 border-indigo-600' : ''}`}
-                    onClick={() => setActiveJob(job.address as `0x${string}`)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium text-gray-800">{job.title}</h3>
-                      {getStatusIcon(job.status)}
-                    </div>
-                    <div className="mt-2">
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Payment:</span> {job.totalPayment} ETH
-                      </div>
-                      <div className="mt-2">
-                        <div className="flex justify-between mb-1">
-                          <span className="text-xs text-gray-600">Progress: {job.currentMilestone}/{job.milestoneCount}</span>
-                          <span className="text-xs text-gray-600">{getProgressPercentage(job.currentMilestone, job.milestoneCount)}%</span>
+              <div>
+                <p className="text-sm text-gray-500 font-medium">Total Jobs</p>
+                <p className="text-xl font-bold text-gray-800">{jobs.length}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl shadow-md overflow-hidden border border-indigo-50 transition-all hover:shadow-lg">
+            <div className="p-5 flex items-center">
+              <div className="rounded-full bg-green-100 p-3 mr-4">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 font-medium">Completed</p>
+                <p className="text-xl font-bold text-gray-800">
+                  {jobs.filter(job => getStatusText(job.status) === "Completed").length}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl shadow-md overflow-hidden border border-indigo-50 transition-all hover:shadow-lg">
+            <div className="p-5 flex items-center">
+              <div className="rounded-full bg-purple-100 p-3 mr-4">
+                <Clock className="h-6 w-6 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 font-medium">In Progress</p>
+                <p className="text-xl font-bold text-gray-800">
+                  {jobs.filter(job => getStatusText(job.status) === "In Progress").length}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl shadow-md overflow-hidden border border-indigo-50 transition-all hover:shadow-lg">
+            <div className="p-5 flex items-center">
+              <div className="rounded-full bg-yellow-100 p-3 mr-4">
+                <AlertTriangle className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 font-medium">Disputed</p>
+                <p className="text-xl font-bold text-gray-800">
+                  {jobs.filter(job => getStatusText(job.status) === "Disputed").length}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="fixed inset-0 bg-indigo-900 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-600 border-t-transparent mx-auto" />
+              <p className="text-center mt-6 text-gray-700 font-medium">Loading your data...</p>
+              <p className="text-center mt-2 text-gray-500 text-sm">This may take a moment</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-500 rounded-lg shadow-md p-5 mb-8 animate-fade-in">
+            <div className="flex items-start">
+              <AlertTriangle className="h-6 w-6 text-red-500 mr-3 mt-0.5" />
+              <div>
+                <p className="font-semibold text-red-800">Something went wrong</p>
+                <p className="text-red-700 mt-1">{error.message}</p>
+                <button className="mt-3 bg-red-100 hover:bg-red-200 text-red-800 font-medium py-1.5 px-4 rounded-md text-sm transition-colors">
+                  Try Again
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Jobs List */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-md overflow-hidden border border-indigo-50">
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4">
+                <h2 className="text-xl font-semibold text-white flex items-center">
+                  <Briefcase className="mr-2 h-5 w-5" />
+                  My Assigned Jobs
+                </h2>
+              </div>
+
+              {jobs.length === 0 ? (
+                <div className="p-8 text-center">
+                  <div className="bg-indigo-50 rounded-full p-4 mx-auto w-16 h-16 flex items-center justify-center mb-4">
+                    <Briefcase className="h-8 w-8 text-indigo-400" />
+                  </div>
+                  <p className="text-gray-600 font-medium">No jobs assigned yet</p>
+                  <p className="text-gray-500 text-sm mt-1">Jobs will appear here once assigned</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {jobs.map((job) => {
+                    const isActive = job.address === selectedJob;
+                    return (
+                      <div
+                        key={job.address}
+                        onClick={() => setSelectedJob(job.address)}
+                        className={`
+                          p-4 cursor-pointer transition-all hover:bg-indigo-50
+                          ${isActive ? 'bg-indigo-100 border-l-4 border-indigo-600' : ''}
+                        `}
+                      >
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-medium text-gray-800 flex items-center">
+                            {job.title}
+                            {isActive && <ChevronRight className="ml-2 h-4 w-4 text-indigo-600" />}
+                          </h3>
+                          <div className={`rounded-full p-1 ${
+                            job.status === "Completed" ? "bg-green-100" :
+                            job.status === "InProgress" ? "bg-blue-100" :
+                            job.status === "Disputed" ? "bg-yellow-100" : 
+                            job.status === "Cancelled" ? "bg-red-100" : "bg-gray-100"
+                          }`}>
+                            {getStatusIcon(job.status?.toString() ?? '')}
+                          </div>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-indigo-600 h-2 rounded-full" 
-                            style={{ width: `${getProgressPercentage(job.currentMilestone, job.milestoneCount)}%` }}
-                          ></div>
+                        <div className="mt-2 text-sm text-gray-600 flex items-center">
+                          <DollarSign className="h-4 w-4 mr-1 text-gray-400" />
+                          <span className="font-medium">{formatEth(job.totalPayment)}</span>
+                        </div>
+
+                        {isActive ? (
+                          <>
+                            <div className="flex justify-between text-xs text-gray-600 mt-3">
+                              <span className="font-medium">
+                                Milestone Progress: {currentMilestone
+                                  ? `${milestones.indexOf(currentMilestone)}`
+                                  : jobSummary?.num_of_milestones} / {jobSummary?.num_of_milestones}
+                              </span>
+                              <span className="font-semibold text-indigo-600">{progress}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2 mt-1 overflow-hidden">
+                              <div
+                                className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all"
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                          </>
+                        ) : (
+                          <div className="mt-2 text-xs text-indigo-500 flex items-center">
+                            <ArrowRight className="h-3 w-3 mr-1" />
+                            <span>Select to view details</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Job Details */}
+          <div className="lg:col-span-2">
+            {selectedJob && jobSummary ? (
+              <div className="space-y-6">
+                <>   <div className="bg-white rounded-xl shadow-md border border-indigo-50 p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-purple-50 p-5 rounded-xl shadow-sm w-auto">
+                    <p className="text-sm text-purple-800 mb-2">Total Payment</p>
+                    <p className="text-2xl font-bold">{formatEth(paymentInfo?.totalPayment ?? 0)}</p>
+                  </div>
+                  <div className="bg-green-50 p-5 rounded-xl shadow-sm">
+                    <p className="text-sm text-green-800 mb-2">Paid Amount</p>
+                    <p className="text-2xl font-bold">{formatEth(paymentInfo?.paidAmount ?? 0)}</p>
+                  </div>
+                  <div className="bg-red-50 p-5 rounded-xl shadow-sm">
+                    <p className="text-sm text-red-800 mb-2">Remaining</p>
+                    <p className="text-2xl font-bold">{formatEth(paymentInfo?.remainingAmount ?? 0)}</p>
+                  </div>
+                  <div className="col-span-full bg-indigo-50 p-5 rounded-xl shadow-sm flex items-center">
+                    <DollarSign className="h-6 w-6 text-indigo-600 mr-3" />
+                    <div>
+                      <p className="text-sm text-gray-700">Token</p>
+                      {tokenLoading ? (
+                        <p className="text-sm text-gray-500">Loading...</p>
+                      ) : (
+                        <p className="text-sm text-gray-500">{tokenName} ({tokenSymbol})</p>
+                      )}
+                    </div>
+                  </div>
+                </div></>
+
+                {/* Job Details Card */}
+                <div className="bg-white rounded-xl shadow-md overflow-hidden border border-indigo-50">
+                  <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-white flex items-center">
+                      <FileText className="mr-2 h-5 w-5" />
+                      Job Details
+                    </h2>
+                    <div className={`px-3 py-1 rounded-full text-sm font-medium shadow-sm ${
+                      jobs.find(j => j.address === selectedJob)?.status === "Completed" ? "bg-green-500 text-white" :
+                      jobs.find(j => j.address === selectedJob)?.status === "InProgress" ? "bg-blue-500 text-white" :
+                      jobs.find(j => j.address === selectedJob)?.status === "Disputed" ? "bg-yellow-500 text-white" : 
+                      jobs.find(j => j.address === selectedJob)?.status === "Cancelled" ? "bg-red-500 text-white" : "bg-white text-indigo-600"
+                    }`}>
+                      {jobs.find((j) => j.address === selectedJob)?.status}
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                      {jobs.find((j) => j.address === selectedJob)?.title}
+                    </h3>
+                    <p className="text-gray-600 mb-6 leading-relaxed">
+                      {jobs.find((j) => j.address === selectedJob)?.description}
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                      <div className="bg-indigo-50 p-5 rounded-xl shadow-sm transition-all hover:shadow-md">
+                        <div className="flex items-center mb-3">
+                          <User className="h-5 w-5 text-indigo-600 mr-2" />
+                          <h4 className="text-sm font-semibold text-indigo-800">
+                            Employer
+                          </h4>
+                        </div>
+                        <div className="bg-white p-3 rounded-lg shadow-sm">
+                          <div className="font-mono text-sm text-gray-700 truncate">
+                            {jobSummary.employer}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-purple-50 p-5 rounded-xl shadow-sm transition-all hover:shadow-md">
+                        <div className="flex items-center mb-3">
+                          <DollarSign className="h-5 w-5 text-purple-600 mr-2" />
+                          <h4 className="text-sm font-semibold text-purple-800">
+                            Total Payment
+                          </h4>
+                        </div>
+                        <div className="bg-white p-3 rounded-lg shadow-sm">
+                          <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
+                            {formatEth(jobSummary.totalPayment)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-blue-50 p-5 rounded-xl shadow-sm transition-all hover:shadow-md">
+                        <div className="flex items-center mb-3">
+                          <Layers className="h-5 w-5 text-blue-600 mr-2" />
+                          <h4 className="text-sm font-semibold text-blue-800">
+                            Progress
+                          </h4>
+                        </div>
+                        <div className="flex items-center">
+                          <div className="flex-1">
+                            <div className="w-full bg-gray-200 rounded-full h-3 mb-2 overflow-hidden">
+                              <div
+                                className="bg-gradient-to-r from-indigo-500 to-blue-500 h-3 rounded-full transition-all"
+                                style={{
+                                  width: `${progress}%`,
+                                }}
+                              />
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {currentMilestone
+                                ? `${milestones.indexOf(currentMilestone)} of ${jobSummary.num_of_milestones
+                                } milestones completed`
+                                : "All milestones completed"}
+                            </div>
+                          </div>
+                          <div className="ml-4 text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-blue-500">
+                            {progress}%
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-green-50 p-5 rounded-xl shadow-sm transition-all hover:shadow-md">
+                        <div className="flex items-center mb-3">
+                          <Calendar className="h-5 w-5 text-green-600 mr-2" />
+                          <h4 className="text-sm font-semibold text-green-800">
+                            Current Milestone
+                          </h4>
+                        </div>
+                        <div className="bg-white p-3 rounded-lg shadow-sm">
+                          <div className="text-lg font-semibold text-gray-800">
+                            {currentMilestone
+                              ? currentMilestone.title
+                              : "All Complete"}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                ))}
+                </div>
+
+                {/* Milestones Card */}
+                <div className="bg-white rounded-xl shadow-md overflow-hidden border border-indigo-50">
+                  <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4">
+                    <h2 className="text-xl font-semibold text-white flex items-center">
+                      <Layers className="mr-2 h-5 w-5" />
+                      Milestones
+                    </h2>
+                  </div>
+
+                  <div>
+                    {milestones.map((m, idx) => (
+                      <div key={idx} className={`p-6 ${idx !== milestones.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center">
+                            <div className={`mr-3 rounded-full p-2 ${
+                              m.status.toString() === "Completed" ? "bg-green-100" :
+                              m.status.toString() === "InProgress" ? "bg-blue-100" :
+                              m.status.toString() === "Disputed" ? "bg-yellow-100" : 
+                              "bg-gray-100"
+                            }`}>
+                              {getStatusIcon(m.status.toString())}
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-800">
+                              {m.title}
+                            </h3>
+                          </div>
+                          <div
+                            className={`px-3 py-1 rounded-full text-xs font-medium shadow-sm ${getStatusColor(
+                              m.status)
+                              }`}
+                          >
+                            {getStatusText(m.status)}
+                          </div>
+                        </div>
+
+                        <p className="text-gray-600 mb-5 bg-gray-50 p-4 rounded-lg border border-gray-100 leading-relaxed">
+                          {m.description}
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
+                          <div className="flex items-center">
+                            <div className="rounded-full bg-indigo-100 p-2 mr-3">
+                              <DollarSign className="h-5 w-5 text-indigo-600" />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-500 mb-1">
+                                Payment Amount
+                              </h4>
+                              <div className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
+                                {formatEth(m.amount)}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center">
+                            <div className="rounded-full bg-purple-100 p-2 mr-3">
+                              <Calendar className="h-5 w-5 text-purple-600" />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-500 mb-1">
+                                Deadline
+                              </h4>
+                              <div className="text-lg font-medium text-gray-800">
+                                {new Date(Number(m.deadline) * 1000).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => submitMilestone(idx)}
+                          className={`w-full py-3 font-medium rounded-lg transition-all transform hover:translate-y-px focus:ring-2 focus:ring-offset-2 focus:outline-none ${
+                            getStatusText(m.status) === "Completed" ? "bg-gray-200 text-gray-500 cursor-not-allowed" :
+                            "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md"
+                          }`}
+                          disabled={isPending || getStatusText(m.status) === "Completed"}
+                        >
+                          {isPending ? (
+                            <div className="flex items-center justify-center">
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                              Processing...
+                            </div>
+                          ) : getStatusText(m.status) === "Completed" ? 
+                            "Milestone Completed" : 
+                            "Submit for Approval"
+                          }
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl shadow-md p-12 text-center border border-indigo-50">
+                <div className="bg-indigo-50 rounded-full p-6 mx-auto w-24 h-24 flex items-center justify-center mb-6">
+                  <Briefcase className="h-12 w-12 text-indigo-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">
+                  No Job Selected
+                </h3>
+                <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                  Select a job from the list to view detailed information, track progress, and manage milestones.
+                </p>
+                <div className="inline-flex items-center text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full text-sm font-medium">
+                  <ArrowRight className="mr-2 h-4 w-4" />
+                  Select a job to get started
+                </div>
               </div>
             )}
           </div>
-        </div>
-        
-        <div className="lg:col-span-2">
-          {jobDetails ? (
-            <div className="space-y-6">
-              <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-                <div className="p-4 bg-indigo-600 flex justify-between items-center">
-                  <h2 className="text-xl font-semibold text-white">Job Details</h2>
-                  <div className="px-3 py-1 bg-white rounded-full text-indigo-600 text-sm font-medium">
-                    {jobDetails.status}
-                  </div>
-                </div>
-                
-                <div className="p-6">
-                  <h3 className="text-2xl font-semibold text-gray-800 mb-4">{jobDetails.title}</h3>
-                  <p className="text-gray-600 mb-6">{jobDetails.description}</p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Employer</h4>
-                      <div className="font-mono text-sm text-gray-700 truncate">{jobDetails.employer}</div>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Total Payment</h4>
-                      <div className="text-xl font-bold text-indigo-600">{jobDetails.totalPayment} ETH</div>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Progress</h4>
-                      <div className="flex items-center">
-                        <div className="flex-1">
-                          <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
-                            <div 
-                              className="bg-indigo-600 h-2 rounded-full" 
-                              style={{ width: `${getProgressPercentage(jobDetails.currentMilestone, jobDetails.milestoneCount)}%` }}
-                            ></div>
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {jobDetails.currentMilestone} of {jobDetails.milestoneCount} milestones completed
-                          </div>
-                        </div>
-                        <div className="ml-4 text-2xl font-bold text-indigo-600">
-                          {getProgressPercentage(jobDetails.currentMilestone, jobDetails.milestoneCount)}%
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Current Milestone</h4>
-                      <div className="text-lg font-semibold text-gray-800">
-                        {jobDetails.currentMilestone < milestones.length 
-                          ? milestones[jobDetails.currentMilestone].title 
-                          : 'All milestones completed'}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {jobDetails.status === 'Created' && jobDetails.worker === account && (
-                    <button 
-                      onClick={() => confirmJob(activeJob as string)}
-                      className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors shadow-md flex items-center justify-center"
-                      disabled={loading}
-                    >
-                      <CheckCircle className="w-5 h-5 mr-2" />
-                      Accept Job
-                    </button>
-                  )}
-                </div>
-              </div>
-              
-              <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-                <div className="p-4 bg-indigo-600">
-                  <h2 className="text-xl font-semibold text-white">Milestones</h2>
-                </div>
-                
-                <div className="divide-y divide-gray-200">
-                  {milestones.map((milestone, index) => (
-                    <div key={index} className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center">
-                          <div className="mr-3">
-                            {getStatusIcon(milestone.status)}
-                          </div>
-                          <h3 className="text-lg font-semibold text-gray-800">{milestone.title}</h3>
-                        </div>
-                        <div 
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            milestone.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                            milestone.status === 'InProgress' ? 'bg-blue-100 text-blue-800' :
-                            milestone.status === 'Disputed' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}
-                        >
-                          {milestone.status}
-                        </div>
-                      </div>
-                      
-                      <p className="text-gray-600 mb-4">{milestone.description}</p>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500 mb-1">Payment Amount</h4>
-                          <div className="text-lg font-bold text-indigo-600">{milestone.amount} ETH</div>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500 mb-1">Deadline</h4>
-                          <div className="text-gray-800">{milestone.deadline}</div>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        {index === jobDetails.currentMilestone && 
-                         milestone.status === 'InProgress' && 
-                         jobDetails.status === 'InProgress' && (
-                          <button 
-                            onClick={() => submitMilestone(jobDetails.address ,index)}
-                            className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors shadow"
-                            disabled={loading}
-                          >
-                            Submit Milestone for Approval
-                          </button>
-                        )}
-                        
-                        {milestone.status === 'Disputed' && (
-                          <button 
-                            onClick={() => autoResolveDispute(index)}
-                            className="w-full py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded-lg transition-colors shadow"
-                            disabled={loading}
-                          >
-                            Auto-Resolve Dispute
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white shadow-lg rounded-lg p-12 text-center">
-              <svg className="h-16 w-16 text-gray-400 mx-auto mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-              </svg>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">No Job Selected</h3>
-              <p className="text-gray-500">Select a job from the list to view its details</p>
-            </div>
-          )}
         </div>
       </div>
     </div>
