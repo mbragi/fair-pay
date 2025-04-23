@@ -185,7 +185,7 @@ const JobCard: React.FC<{
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="overflow-hidden bg-indigo-50 border-t border-indigo-100"
+            className="overflow-hidden bg-indigo-50 border-t border-indigo-100 items-start"
           >
             <div className="p-6 space-y-4">
               <h4 className="font-bold text-indigo-900 flex items-center gap-2">

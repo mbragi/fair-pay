@@ -124,6 +124,8 @@ const JobManagementModal: React.FC<JobManagementModalProps> = ({
       });
       await sendTx(approveTx);
 
+      // 
+
       // 3) now depositFunds on the escrow
       const escrowCtr = getContract({
         address: job.address,
