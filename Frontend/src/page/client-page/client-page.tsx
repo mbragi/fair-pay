@@ -52,6 +52,7 @@ const ClientPage: React.FC = () => {
   const {
     data: jobs,
     refetch: refetchJobs,
+    refetchDetails,
     isLoading: jobsPending,
   } = useFetchOrganizationJobs(selectedOrgId ?? 0);
 
@@ -173,7 +174,7 @@ const ClientPage: React.FC = () => {
                   </button>
                   <h2 className="text-2xl font-semibold text-gray-800 flex items-center gap-2">
                     <Briefcase size={24} className="text-indigo-600" />
-                    {organizations?.find(org => org.id === selectedOrgId)?.name || "Organization"} Jobs
+                    Jobs For {organizations?.find(org => org.id === selectedOrgId)?.name || "Organization"}
                   </h2>
                 </div>
               </div>
@@ -229,6 +230,7 @@ const ClientPage: React.FC = () => {
               setShowCreateJobModal(false);
               showToast("Job created successfully");
               await refetchJobs();
+              refetchDetails();
             } catch (e) {
               console.error(e);
               showToast("Failed to create job", true);
@@ -241,7 +243,10 @@ const ClientPage: React.FC = () => {
           <MilestoneModal
             isOpen={showMilestonesModal}
             job={selectedJob}
-            onClose={() => setShowMilestonesModal(false)}
+            onClose={() => {
+              refetchDetails()
+              setShowMilestonesModal(false)
+            }}
           />
         )}
 
@@ -252,7 +257,7 @@ const ClientPage: React.FC = () => {
           onSuccess={async () => {
             await refetchJobs();
             showToast("Job updated successfully");
-            await refetchJobs();
+            refetchDetails()
           }}
         />
 

@@ -28,6 +28,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { client } from "../../client";
+import { useIsJobFunded } from "../../hooks/useIsJobFunded";
 
 interface JobManagementModalProps {
   isOpen: boolean;
@@ -88,21 +89,14 @@ const JobManagementModal: React.FC<JobManagementModalProps> = ({
     tokenName,
     tokenLoading,
     tokenError,
-    tokenDecimals
   } = useGetJobPaymentInfo(job?.address ?? '');
-  console.log("Payment Info:", {
-    paymentInfo,
-    tokenSymbol,
-    tokenName,
-    paymentLoading,
-    tokenLoading,
-    paymentError,
-    tokenError,
-    tokenDecimals
-  });
+
   // fund job transaction
   const { mutateAsync: sendTx ,isPending: isFunding , error: err} =
     useSendTransaction();
+  
+  const { isFunded, refetch } = useIsJobFunded(job?.address ?? '0x');
+  console.log(isFunded)
 
   const fundJob = async () => {
     if (!paymentInfo) return;
@@ -141,6 +135,7 @@ const JobManagementModal: React.FC<JobManagementModalProps> = ({
       await sendTx(depositTx);
 
       onSuccess();
+      await refetch();
       onClose();
     } catch (err: any) {
       console.error("Fund job failed:", err);
@@ -409,7 +404,7 @@ const JobManagementModal: React.FC<JobManagementModalProps> = ({
                 </div>
               </div>
               {/* Fund Job Button */}
-              {paymentInfo?.remainingAmount as bigint > 0n && (
+              {!isFunded && (
                 <button
                   onClick={fundJob}
                   disabled={isFunding}

@@ -1,92 +1,112 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
-import { useReadContract,  } from "thirdweb/react";
-import { readContract } from "thirdweb"
+import { useEffect, useState, useCallback } from "react";
+import { useReadContract } from "thirdweb/react";
+import { readContract, getContract } from "thirdweb";
 import { OrganizationManager } from "../abis/addresses";
-import { client } from "../client";
-import { baseSepolia } from "thirdweb/chains";
-import { getContract } from "thirdweb";
-import { Job } from "../types/generated";
 import organizationManagerAbi from "../abis/OrganizationManager.json";
 import jobEscrowAbi from "../abis/JobEscrow.json";
+import { baseSepolia } from "thirdweb/chains";
+import { client } from "../client";
+import { Job } from "../types/generated";
 
 export const useFetchOrganizationJobs = (orgId: number) => {
-  const [jobsData, setJobsData] = useState<Array<Job>>([]);
+  const [jobsData, setJobsData] = useState<Job[]>([]);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
-  
-  const contract = getContract({
+
+  // 1) read just the array of jobAddresses
+  const managerContract = getContract({
     address: OrganizationManager,
     chain: baseSepolia,
     client,
     abi: organizationManagerAbi.abi as any,
   });
-
-
-  const { data:jobAddresses, isLoading: addressesLoading, error: addressesError, refetch } = useReadContract({
-    contract,
+  const {
+    data: jobAddresses,
+    isLoading: addressesLoading,
+    error: addressesError,
+    refetch: refetchAddresses,
+  } = useReadContract({
+    contract: managerContract,
     method: "getOrganizationJobs",
     params: [BigInt(orgId)],
   });
-  
 
-  
-  useEffect(() => {
-    const fetchJobDetails = async () => {
-      if (!jobAddresses || jobAddresses.length === 0) {
-        setJobsData([]); 
+  // 2) fetch full details for each address
+  const fetchJobDetails = useCallback(
+    async (addresses: string[]) => {
+      if (!addresses || addresses.length === 0) {
+        setJobsData([]);
         return;
       }
-    
+
       setIsLoadingDetails(true);
       try {
-        const detailPromises = jobAddresses.map(async (address: string) => {
+        const detailPromises = addresses.map(async (address) => {
           const jobContract = getContract({
             address,
             chain: baseSepolia,
             client,
             abi: jobEscrowAbi.abi as any,
           });
-    
-          const details = await readContract({
+
+          const raw = await readContract({
             contract: jobContract,
             method: "getJobDetails",
           });
-    
-         
+
           return {
             address,
-            employer: details[0],
-            worker: details[1],
-            title: details[2],
-            description: details[3],
-            totalPayment: details[4],
-            status: details[5],
-            milestoneCount: details[6],
-            currentMilestone: details[7]
-          };
+            employer: raw[0] as string,
+            worker: raw[1] as string,
+            title: raw[2] as string,
+            description: raw[3] as string,
+            totalPayment: raw[4] as any,
+            status: raw[5] as any,
+            milestoneCount: raw[6] as any,
+            currentMilestone: raw[7] as any,
+          } as Job;
         });
-    
+
         const results = await Promise.all(detailPromises);
         setJobsData(results);
-      } catch (error) {
-        console.error("Error fetching job details:", error);
+      } catch (err) {
+        console.error("Error fetching job details:", err);
       } finally {
         setIsLoadingDetails(false);
       }
-    };
-    
-    fetchJobDetails();
-  }, [jobAddresses]);
+    },
+    []
+  );
 
+  // auto-fetch details whenever the addresses array changes
+  useEffect(() => {
+    if (jobAddresses) {
+      // cast to string[]
+      fetchJobDetails(jobAddresses as string[]);
+    } else {
+      setJobsData([]);
+    }
+  }, [jobAddresses, fetchJobDetails]);
 
+  // 3) two ways to re-run:
+  // — refetch(): rerun the on-chain addresses call (and then auto-fetch details)
+  const refetch = useCallback(() => {
+    return refetchAddresses();
+  }, [refetchAddresses]);
 
-  const isLoading = addressesLoading || isLoadingDetails;
+  // — refetchDetails(): rerun only the detail fetch on existing addresses
+  const refetchDetails = useCallback(() => {
+    if (jobAddresses) {
+      fetchJobDetails(jobAddresses as string[]);
+    }
+  }, [jobAddresses, fetchJobDetails]);
 
   return {
     data: jobsData,
     jobAddresses,
-    isLoading,
+    isLoading: addressesLoading || isLoadingDetails,
     error: addressesError,
     refetch,
+    refetchDetails,
   };
 };

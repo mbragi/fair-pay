@@ -1,9 +1,9 @@
 // components/JobList.tsx
 import React, { useState } from "react";
-import { 
-  Briefcase, 
-  PlusCircle, 
-  ChevronDown, 
+import {
+  Briefcase,
+  PlusCircle,
+  ChevronDown,
   ChevronUp,
   Calendar,
   DollarSign,
@@ -19,6 +19,7 @@ import { useGetMilestones, Milestone } from "../../hooks/useGetMilestones";
 import { Job } from "../../types/generated";
 import { getStatusColor, getStatusIcon, getStatusText } from "../../utils/contractUtils";
 import { useApproveMilestone } from "../../hooks/useApproveMilestone";
+import { useGetJobPaymentInfo } from "../../hooks/useGetJobPaymentInfo";
 
 interface Props {
   jobs: Job[];
@@ -36,7 +37,7 @@ interface Props {
 
 const MilestoneProgressBar = ({ current, total }: { current: number, total: number }) => {
   const percentage = total > 0 ? (current / total) * 100 : 0;
-  
+
   return (
     <div className="relative pt-1 w-full">
       <div className="flex items-center justify-between mb-1">
@@ -61,9 +62,10 @@ const JobCard: React.FC<{
   onCreateMilestones: (job: Job) => void;
 }> = ({ job, isExpanded, toggleExpand, onSelectJob, onCreateMilestones }) => {
   const count = Number(job.milestoneCount);
-  const { milestones, isLoading: loading } = useGetMilestones(job.address, count);
-  const {approveMilestone, isApproving}=useApproveMilestone(job?.address as '0x0');
+  const { milestones, isLoading: loading, refetch } = useGetMilestones(job.address, count);
+  const { approveMilestone, isApproving } = useApproveMilestone(job?.address as '0x0');
   const [isHovered, setIsHovered] = useState(false);
+  const { tokenSymbol, isLoading, paymentInfo } = useGetJobPaymentInfo(job.address)
 
   const valid = milestones.filter((m: Milestone) =>
     (m.title?.trim().length ?? 0) > 0 ||
@@ -72,7 +74,7 @@ const JobCard: React.FC<{
     (m.status > 0)
   );
   const has = !loading && valid.length > 0;
-  
+
   // Calculate completed milestones
   const completedMilestones = valid.filter((m: Milestone) => m.status === 2).length;
 
@@ -86,7 +88,7 @@ const JobCard: React.FC<{
   const statusIcon = getStatusIcon(job.status);
 
   return (
-    <motion.div 
+    <motion.div
       className={`relative overflow-hidden bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 ${isHovered ? 'transform scale-[1.01]' : ''}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -97,7 +99,7 @@ const JobCard: React.FC<{
     >
       {/* Status indicator */}
       <div className={`absolute top-0 left-0 w-full h-1 ${statusColor}`}></div>
-      
+
       {/* Card Content */}
       <div className="p-6">
         <div className="cursor-pointer" onClick={() => onSelectJob(job)}>
@@ -106,12 +108,11 @@ const JobCard: React.FC<{
             <div className="bg-indigo-50 p-2 rounded-lg">
               <Briefcase className="text-indigo-600" size={24} />
             </div>
-            <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
-              job.status === 0 ? 'bg-blue-100 text-blue-800' :
+            <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${job.status === 0 ? 'bg-blue-100 text-blue-800' :
               job.status === 1 ? 'bg-amber-100 text-amber-800' :
-              job.status === 2 ? 'bg-green-100 text-green-800' :
-              'bg-red-100 text-red-800'
-            }`}>
+                job.status === 2 ? 'bg-green-100 text-green-800' :
+                  'bg-red-100 text-red-800'
+              }`}>
               {statusIcon}
               {getStatusText(job.status)}
             </span>
@@ -119,7 +120,7 @@ const JobCard: React.FC<{
 
           <h3 className="text-xl font-bold text-gray-800 mb-2 truncate">{job.title}</h3>
           <p className="text-gray-600 text-sm mb-4 line-clamp-2">{job.description}</p>
-          
+
           {/* Stats row */}
           <div className="grid grid-cols-2 gap-2 mb-4">
             <div className="bg-gray-50 p-3 rounded-lg flex items-center gap-2">
@@ -128,7 +129,8 @@ const JobCard: React.FC<{
               </div>
               <div>
                 <p className="text-xs text-gray-500">Payment</p>
-                <p className="text-sm font-semibold">{formatEther(job.totalPayment.toString())} ETH</p>
+                <p className="text-sm font-semibold">{!isLoading && paymentInfo?.totalPayment ? formatEther(paymentInfo?.totalPayment) : 0} {tokenSymbol}</p>
+                {isLoading && <p className="text-xs text-gray-500">...</p>}
               </div>
             </div>
             <div className="bg-gray-50 p-3 rounded-lg flex items-center gap-2">
@@ -141,7 +143,7 @@ const JobCard: React.FC<{
               </div>
             </div>
           </div>
-          
+
           {/* Progress bar */}
           {has && <MilestoneProgressBar current={completedMilestones} total={count} />}
         </div>
@@ -157,7 +159,7 @@ const JobCard: React.FC<{
           >
             <Search size={16} /> Job Details
           </button>
-          
+
           <button
             onClick={handleToggle}
             className="flex items-center gap-1 py-1 px-2 rounded-md bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-medium transition-all"
@@ -191,30 +193,28 @@ const JobCard: React.FC<{
               <h4 className="font-bold text-indigo-900 flex items-center gap-2">
                 <Award size={18} /> Milestones
               </h4>
-              
+
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-700"></div>
                 </div>
               ) : (
                 valid.map((m: Milestone, i: number) => (
-                  <div 
-                    key={i} 
-                    className={`relative p-4 rounded-lg bg-white shadow-sm border-l-4 ${
-                      m.status === 0 ? 'border-blue-400' :
+                  <div
+                    key={i}
+                    className={`relative p-4 rounded-lg bg-white shadow-sm border-l-4 ${m.status === 0 ? 'border-blue-400' :
                       m.status === 1 ? 'border-amber-400' :
-                      m.status === 2 ? 'border-green-400' :
-                      'border-red-400'
-                    }`}
+                        m.status === 2 ? 'border-green-400' :
+                          'border-red-400'
+                      }`}
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-2">
-                        <div className={`p-1 rounded-full ${
-                          m.status === 0 ? 'bg-blue-100 text-blue-600' :
+                        <div className={`p-1 rounded-full ${m.status === 0 ? 'bg-blue-100 text-blue-600' :
                           m.status === 1 ? 'bg-amber-100 text-amber-600' :
-                          m.status === 2 ? 'bg-green-100 text-green-600' :
-                          'bg-red-100 text-red-600'
-                        }`}>
+                            m.status === 2 ? 'bg-green-100 text-green-600' :
+                              'bg-red-100 text-red-600'
+                          }`}>
                           {getStatusIcon(m.status)}
                         </div>
                         <h5 className="font-semibold text-gray-900">Milestone {i + 1}</h5>
@@ -223,10 +223,10 @@ const JobCard: React.FC<{
                         {(Number(m.amount) / 1e18).toFixed(3)} ETH
                       </span>
                     </div>
-                    
+
                     <p className="text-gray-700 mt-2 font-medium">{m.title || "Untitled"}</p>
                     <p className="text-gray-600 text-sm mt-1">{m.description || "No description provided"}</p>
-                    
+
                     <div className="flex items-center justify-between mt-3 text-xs">
                       <div className="flex items-center gap-1 text-gray-500">
                         <Calendar size={14} />
@@ -240,11 +240,19 @@ const JobCard: React.FC<{
                     {/* 🌟 APPROVE BUTTON 🌟 */}
                     {m.status === 2 && (
                       <button
-                        onClick={() => approveMilestone(i)}
+                        onClick={() => {
+                          approveMilestone(i)
+                            .then(() => {
+                              refetch();
+                            })
+                            .catch((error) => {
+                              console.error("Error approving milestone:", error);
+                            });
+                        }}
                         disabled={isApproving}
                         className={`mt-4 w-full py-2 rounded-md font-medium transition ${isApproving
-                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                            : 'bg-green-600 hover:bg-green-700 text-white'
+                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                          : 'bg-green-600 hover:bg-green-700 text-white'
                           }`}
                       >
                         {isApproving ? 'Approving...' : 'Approve Milestone'}
@@ -278,7 +286,6 @@ const JobList: React.FC<Props> = ({
   const [expanded, setExpanded] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<number | null>(null);
-  
 
   const toggle = (addr: string) => {
     setExpanded((prev) => (prev === addr ? null : addr));
@@ -287,7 +294,7 @@ const JobList: React.FC<Props> = ({
   // Filter jobs by search term and status
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        job.description.toLowerCase().includes(searchTerm.toLowerCase());
+      job.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === null || job.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -309,7 +316,7 @@ const JobList: React.FC<Props> = ({
               className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
-          
+
           <div className="w-full md:w-auto flex gap-2">
             <div className="relative flex items-center">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -327,7 +334,7 @@ const JobList: React.FC<Props> = ({
                 <option value="3">Cancelled</option>
               </select>
             </div>
-            
+
             <button
               onClick={onCreateClick}
               className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-2.5 px-4 rounded-lg font-medium flex items-center gap-2 transition-all shadow-md hover:shadow-lg"
@@ -346,9 +353,9 @@ const JobList: React.FC<Props> = ({
           {searchTerm && <span> matching "{searchTerm}"</span>}
           {filterStatus !== null && <span> with status: {getStatusText(filterStatus)}</span>}
         </div>
-        
+
         {expanded && (
-          <button 
+          <button
             onClick={() => setExpanded(null)}
             className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
           >
@@ -358,7 +365,7 @@ const JobList: React.FC<Props> = ({
       </div>
 
       {/* Job grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start ">
         {isLoading ? (
           // Skeleton loaders
           Array.from({ length: 6 }).map((_, i) => (
@@ -370,14 +377,14 @@ const JobList: React.FC<Props> = ({
               <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
               <div className="h-4 bg-gray-200 rounded w-full mb-1"></div>
               <div className="h-4 bg-gray-200 rounded w-5/6 mb-4"></div>
-              
+
               <div className="grid grid-cols-2 gap-2 mb-4">
                 <div className="h-16 bg-gray-100 rounded-lg"></div>
                 <div className="h-16 bg-gray-100 rounded-lg"></div>
               </div>
-              
+
               <div className="h-4 bg-gray-200 rounded w-full mb-4"></div>
-              
+
               <div className="flex justify-between items-center mt-4">
                 <div className="h-8 w-24 bg-gray-200 rounded"></div>
                 <div className="h-8 w-32 bg-gray-200 rounded"></div>
