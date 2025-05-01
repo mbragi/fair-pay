@@ -1,16 +1,19 @@
 import { usePasskeySmartAccount } from "../../hooks/useSmartAccount";
+import Button from "../common/Button";
 
 const PasskeyConnect = () => {
   const { connectWithPasskey, isConnecting } = usePasskeySmartAccount();
 
   return (
-    <button
+    <Button
       onClick={connectWithPasskey}
-      className="bg-green-600 text-white px-4 py-2 rounded"
+      variant="success"
+      isLoading={isConnecting}
+      loadingText="Connecting..."
       disabled={isConnecting}
     >
-      {isConnecting ? "Connecting..." : "Login with Passkey"}
-    </button>
+      Login with Passkey
+    </Button>
   );
 };
 

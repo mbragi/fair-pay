@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useServiceProvider } from "../../hooks/useServiceProvider";
 import { formatEth, getStatusColor, getStatusText } from "../../utils/contractUtils";
+import Button from "../../components/common/Button";
 
 const ServiceProviderDashboard = () => {
   const {
@@ -43,7 +44,7 @@ const ServiceProviderDashboard = () => {
   console.log("Current Milestone:", currentMilestone);
   console.log("Payment Info:", paymentInfo);
   console.log("Token Name:", tokenName);
-  
+
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -91,7 +92,7 @@ const ServiceProviderDashboard = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-md overflow-hidden border border-indigo-50 transition-all hover:shadow-lg">
             <div className="p-5 flex items-center">
               <div className="rounded-full bg-green-100 p-3 mr-4">
@@ -105,7 +106,7 @@ const ServiceProviderDashboard = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-md overflow-hidden border border-indigo-50 transition-all hover:shadow-lg">
             <div className="p-5 flex items-center">
               <div className="rounded-full bg-purple-100 p-3 mr-4">
@@ -119,7 +120,7 @@ const ServiceProviderDashboard = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-md overflow-hidden border border-indigo-50 transition-all hover:shadow-lg">
             <div className="p-5 flex items-center">
               <div className="rounded-full bg-yellow-100 p-3 mr-4">
@@ -154,9 +155,13 @@ const ServiceProviderDashboard = () => {
               <div>
                 <p className="font-semibold text-red-800">Something went wrong</p>
                 <p className="text-red-700 mt-1">{error.message}</p>
-                <button className="mt-3 bg-red-100 hover:bg-red-200 text-red-800 font-medium py-1.5 px-4 rounded-md text-sm transition-colors">
+                <Button
+                  variant="danger"
+                  size="sm"
+                  className="mt-3"
+                >
                   Try Again
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -199,12 +204,11 @@ const ServiceProviderDashboard = () => {
                             {job.title}
                             {isActive && <ChevronRight className="ml-2 h-4 w-4 text-indigo-600" />}
                           </h3>
-                          <div className={`rounded-full p-1 ${
-                            job.status === "Completed" ? "bg-green-100" :
+                          <div className={`rounded-full p-1 ${job.status === "Completed" ? "bg-green-100" :
                             job.status === "InProgress" ? "bg-blue-100" :
-                            job.status === "Disputed" ? "bg-yellow-100" : 
-                            job.status === "Cancelled" ? "bg-red-100" : "bg-gray-100"
-                          }`}>
+                              job.status === "Disputed" ? "bg-yellow-100" :
+                                job.status === "Cancelled" ? "bg-red-100" : "bg-gray-100"
+                            }`}>
                             {getStatusIcon(job.status?.toString() ?? '')}
                           </div>
                         </div>
@@ -281,12 +285,11 @@ const ServiceProviderDashboard = () => {
                       <FileText className="mr-2 h-5 w-5" />
                       Job Details
                     </h2>
-                    <div className={`px-3 py-1 rounded-full text-sm font-medium shadow-sm ${
-                      jobs.find(j => j.address === selectedJob)?.status === "Completed" ? "bg-green-500 text-white" :
+                    <div className={`px-3 py-1 rounded-full text-sm font-medium shadow-sm ${jobs.find(j => j.address === selectedJob)?.status === "Completed" ? "bg-green-500 text-white" :
                       jobs.find(j => j.address === selectedJob)?.status === "InProgress" ? "bg-blue-500 text-white" :
-                      jobs.find(j => j.address === selectedJob)?.status === "Disputed" ? "bg-yellow-500 text-white" : 
-                      jobs.find(j => j.address === selectedJob)?.status === "Cancelled" ? "bg-red-500 text-white" : "bg-white text-indigo-600"
-                    }`}>
+                        jobs.find(j => j.address === selectedJob)?.status === "Disputed" ? "bg-yellow-500 text-white" :
+                          jobs.find(j => j.address === selectedJob)?.status === "Cancelled" ? "bg-red-500 text-white" : "bg-white text-indigo-600"
+                      }`}>
                       {jobs.find((j) => j.address === selectedJob)?.status}
                     </div>
                   </div>
@@ -312,7 +315,7 @@ const ServiceProviderDashboard = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="bg-purple-50 p-5 rounded-xl shadow-sm transition-all hover:shadow-md">
                         <div className="flex items-center mb-3">
                           <DollarSign className="h-5 w-5 text-purple-600 mr-2" />
@@ -326,7 +329,7 @@ const ServiceProviderDashboard = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="bg-blue-50 p-5 rounded-xl shadow-sm transition-all hover:shadow-md">
                         <div className="flex items-center mb-3">
                           <Layers className="h-5 w-5 text-blue-600 mr-2" />
@@ -356,7 +359,7 @@ const ServiceProviderDashboard = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="bg-green-50 p-5 rounded-xl shadow-sm transition-all hover:shadow-md">
                         <div className="flex items-center mb-3">
                           <Calendar className="h-5 w-5 text-green-600 mr-2" />
@@ -390,12 +393,11 @@ const ServiceProviderDashboard = () => {
                       <div key={idx} className={`p-6 ${idx !== milestones.length - 1 ? 'border-b border-gray-100' : ''}`}>
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center">
-                            <div className={`mr-3 rounded-full p-2 ${
-                              m.status.toString() === "Completed" ? "bg-green-100" :
+                            <div className={`mr-3 rounded-full p-2 ${m.status.toString() === "Completed" ? "bg-green-100" :
                               m.status.toString() === "InProgress" ? "bg-blue-100" :
-                              m.status.toString() === "Disputed" ? "bg-yellow-100" : 
-                              "bg-gray-100"
-                            }`}>
+                                m.status.toString() === "Disputed" ? "bg-yellow-100" :
+                                  "bg-gray-100"
+                              }`}>
                               {getStatusIcon(m.status.toString())}
                             </div>
                             <h3 className="text-lg font-semibold text-gray-800">
@@ -429,7 +431,7 @@ const ServiceProviderDashboard = () => {
                               </div>
                             </div>
                           </div>
-                          
+
                           <div className="flex items-center">
                             <div className="rounded-full bg-purple-100 p-2 mr-3">
                               <Calendar className="h-5 w-5 text-purple-600" />
@@ -447,10 +449,9 @@ const ServiceProviderDashboard = () => {
 
                         <button
                           onClick={() => submitMilestone(idx)}
-                          className={`w-full py-3 font-medium rounded-lg transition-all transform hover:translate-y-px focus:ring-2 focus:ring-offset-2 focus:outline-none ${
-                            getStatusText(m.status) === "Completed" ? "bg-gray-200 text-gray-500 cursor-not-allowed" :
+                          className={`w-full py-3 font-medium rounded-lg transition-all transform hover:translate-y-px focus:ring-2 focus:ring-offset-2 focus:outline-none ${getStatusText(m.status) === "Completed" ? "bg-gray-200 text-gray-500 cursor-not-allowed" :
                             "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md"
-                          }`}
+                            }`}
                           disabled={isPending || getStatusText(m.status) === "Completed"}
                         >
                           {isPending ? (
@@ -458,8 +459,8 @@ const ServiceProviderDashboard = () => {
                               <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
                               Processing...
                             </div>
-                          ) : getStatusText(m.status) === "Completed" ? 
-                            "Milestone Completed" : 
+                          ) : getStatusText(m.status) === "Completed" ?
+                            "Milestone Completed" :
                             "Submit for Approval"
                           }
                         </button>

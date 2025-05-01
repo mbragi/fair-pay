@@ -9,6 +9,7 @@ import {
     ChevronRight,
   Wallet
 } from 'lucide-react';
+import Button from "../common/Button";
 
 const HowItWorksSection: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'client' | 'provider'>('client');
@@ -94,9 +95,12 @@ const HowItWorksSection: React.FC = () => {
                           <label className="block text-sm font-medium text-gray-700 mb-1">Completion Date</label>
                           <div className="bg-gray-50 p-2 rounded border border-gray-200 text-sm">May 15, 2025</div>
                         </div>
-                        <button className="w-full bg-blue-600 text-white py-2 rounded-md font-medium hover:bg-blue-700 transition duration-300">
+                        <Button
+                          variant="primary"
+                          fullWidth
+                        >
                           Fund Escrow & Create Contract
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -175,9 +179,12 @@ const HowItWorksSection: React.FC = () => {
                         <div className="mt-2 text-xs text-blue-700">Delivered: April 11, 2025</div>
                       </div>
                       <div className="space-y-3">
-                        <button className="w-full bg-green-600 text-white py-2 rounded-md font-medium hover:bg-green-700 transition duration-300">
+                        <Button
+                          variant="success"
+                          fullWidth
+                        >
                           Approve & Release Payment
-                        </button>
+                        </Button>
                         <button className="w-full bg-white text-gray-700 border border-gray-300 py-2 rounded-md font-medium hover:bg-gray-50 transition duration-300">
                           Request Revisions
                         </button>
