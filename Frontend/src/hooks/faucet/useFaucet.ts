@@ -23,6 +23,11 @@ export const useFaucet = () => {
   const [countdown, setCountdown] = useState<number>(0);
   const [claimRequestSent, setClaimRequestSent] = useState(false);
   const [fundingReceived, setFundingReceived] = useState(false);
+  const [processedEventIds, setProcessedEventIds] = useState<string[]>(() => {
+    // Initialize from localStorage if available
+    const saved = localStorage.getItem('processedFaucetEvents');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // user from useAuth
   const { address, isConnected } = useAuth();
@@ -61,17 +66,30 @@ export const useFaucet = () => {
       const latestEvent = claimEvents[claimEvents.length - 1];
 
       if (latestEvent) {
-        setClaimSuccess(true);
-        setClaimRequestSent(false);
-        // Hide notification after 5 seconds
-        setTimeout(() => setClaimSuccess(false), 5000);
-        // Refresh data
-        refetchRemaining();
-        refetchNextClaim();
-        refetchBalance();
+        // Create a unique ID for this event using transaction hash and log index
+        const eventId = `${latestEvent.transactionHash}-${latestEvent.logIndex}`;
+
+        // Only process this event if we haven't seen it before
+        if (!processedEventIds.includes(eventId)) {
+          setProcessedEventIds((prev) => [...prev, eventId]);
+          setClaimSuccess(true);
+          setClaimRequestSent(false);
+          // Hide notification after 5 seconds
+          setTimeout(() => setClaimSuccess(false), 5000);
+          // Refresh data
+          refetchRemaining();
+          refetchNextClaim();
+          refetchBalance();
+        }
       }
     }
-  }, [claimEvents, refetchBalance, refetchRemaining, refetchNextClaim]);
+  }, [
+    claimEvents,
+    refetchBalance,
+    refetchRemaining,
+    refetchNextClaim,
+    processedEventIds,
+  ]);
 
   // Handle fund events
   useEffect(() => {
@@ -80,14 +98,21 @@ export const useFaucet = () => {
       const latestEvent = fundEvents[fundEvents.length - 1];
 
       if (latestEvent) {
-        setFundingReceived(true);
-        // Hide notification after 5 seconds
-        setTimeout(() => setFundingReceived(false), 5000);
-        // Refresh balances
-        refetchBalance();
+        // Create a unique ID for this event using transaction hash and log index
+        const eventId = `${latestEvent.transactionHash}-${latestEvent.logIndex}`;
+
+        // Only process this event if we haven't seen it before
+        if (!processedEventIds.includes(eventId)) {
+          setProcessedEventIds((prev) => [...prev, eventId]);
+          setFundingReceived(true);
+          // Hide notification after 5 seconds
+          setTimeout(() => setFundingReceived(false), 5000);
+          // Refresh balances
+          refetchBalance();
+        }
       }
     }
-  }, [fundEvents, refetchBalance]);
+  }, [fundEvents, refetchBalance, processedEventIds]);
 
   // Format token amount with proper decimals
   const formatTokenAmount = (
@@ -147,6 +172,11 @@ export const useFaucet = () => {
       .toString()
       .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   };
+
+  // Save processedEventIds to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('processedFaucetEvents', JSON.stringify(processedEventIds));
+  }, [processedEventIds]);
 
   return {
     // State
