@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { utils } from "ethers";
 import { useFaucetContract } from "./useFaucetContract";
-import { useBalance } from "../../hooks/useNativeBalance";
-import { useAuth } from "../../context/AuthContext";
+import { useBalance } from "@hooks/finance/useNativeBalance";
+import { useAuth } from "@context/AuthContext";
 import { useContractEvents } from "thirdweb/react";
 import { prepareEvent } from "thirdweb";
+import { WBBT_TOKEN_ADDRESS } from "@constants/contracts";
+import { APP_CONFIG } from "@constants/config";
 
 // Prepare event definitions
 const tokenClaimedEvent = prepareEvent({
@@ -25,7 +27,7 @@ export const useFaucet = () => {
   const [fundingReceived, setFundingReceived] = useState(false);
   const [processedEventIds, setProcessedEventIds] = useState<string[]>(() => {
     // Initialize from localStorage if available
-    const saved = localStorage.getItem('processedFaucetEvents');
+    const saved = localStorage.getItem("processedFaucetEvents");
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -44,9 +46,8 @@ export const useFaucet = () => {
   } = useFaucetContract(address);
 
   // Get token contract data using useBalance
-  const TOKEN_ADDRESS = "0x934e4a5242603d25bB497303ab1b0f2367AA8a85";
   const { tokenBalance, tokenSymbol, tokenDecimals, refetchBalance } =
-    useBalance(TOKEN_ADDRESS);
+    useBalance(WBBT_TOKEN_ADDRESS);
 
   // Listen for contract events using useContractEvents
   const { data: claimEvents } = useContractEvents({
@@ -75,7 +76,7 @@ export const useFaucet = () => {
           setClaimSuccess(true);
           setClaimRequestSent(false);
           // Hide notification after 5 seconds
-          setTimeout(() => setClaimSuccess(false), 5000);
+          setTimeout(() => setClaimSuccess(false), APP_CONFIG.toastDuration);
           // Refresh data
           refetchRemaining();
           refetchNextClaim();
@@ -106,7 +107,7 @@ export const useFaucet = () => {
           setProcessedEventIds((prev) => [...prev, eventId]);
           setFundingReceived(true);
           // Hide notification after 5 seconds
-          setTimeout(() => setFundingReceived(false), 5000);
+          setTimeout(() => setFundingReceived(false), APP_CONFIG.toastDuration);
           // Refresh balances
           refetchBalance();
         }
@@ -143,7 +144,7 @@ export const useFaucet = () => {
       setClaimRequestSent(false);
 
       // Reset error message after 5 seconds
-      setTimeout(() => setClaimError(null), 5000);
+      setTimeout(() => setClaimError(null), APP_CONFIG.toastDuration);
     } finally {
       setIsLoading(false);
     }
@@ -175,7 +176,10 @@ export const useFaucet = () => {
 
   // Save processedEventIds to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('processedFaucetEvents', JSON.stringify(processedEventIds));
+    localStorage.setItem(
+      "processedFaucetEvents",
+      JSON.stringify(processedEventIds)
+    );
   }, [processedEventIds]);
 
   return {

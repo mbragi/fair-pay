@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../../context/AuthContext";
-import { useFetchOrganizationsByOwner } from "../../hooks/useFetchOrganisationsByOwner";
-import { useCreateOrganization } from "../../hooks/useCreateOrganisation";
-import { useCreateJob } from "../../hooks/useCreateJob";
-import { useFetchOrganizationJobs } from "../../hooks/useFetchOrganisationsJobs";
-import OrganizationList from "../../components/lists/organisationList";
-import JobList from "../../components/lists/jobList";
-import CreateOrganizationModal from "../../components/modals/organizationModal";
-import CreateJobModal from "../../components/modals/createJobmodal";
-import Toast from "../../components/common/Toast";
-import { Job } from "../../types/generated";
-import MilestoneModal from "../../components/modals/milestoneModal";
-import JobManagementModal from "../../components/modals/JobManagementModal";
+import { useAuth } from "@context/AuthContext";
+// Import hooks using path aliases and new structure
+import { useFetchOrganizationsByOwner, useCreateOrganization } from "@hooks/organization";
+import { useCreateJob, useFetchOrganizationJobs } from "@hooks/job";
+// Import components using path aliases and new structure
+import OrganizationList from "@components/organization/OrganizationList";
+import JobList from "@components/job/JobList";
+import CreateOrganizationModal from "@components/modals/OrganizationModal";
+import CreateJobModal from "@components/job/CreateJobModal";
+import Toast from "@components/common/Toast";
+import { Job } from "@types/generated";
+import MilestoneModal from "@components/milestone/MilestoneModal";
+import JobManagementModal from "@components/job/JobManagementModal";
 // Import icons
 import { Building, Briefcase, ChevronLeft, ExternalLink, AlertCircle } from "lucide-react";
 
@@ -29,7 +29,7 @@ const ClientPage: React.FC = () => {
   useEffect(() => {
     console.debug(modalOpen);
     if (address) setModalOpen(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address]);
 
   const [toast, setToast] = useState({
@@ -82,7 +82,7 @@ const ClientPage: React.FC = () => {
 
   // Calculate stats
   const totalOrgs = organizations?.length || 0;
-  const totalJobs = jobs.filter(i=>i.employer === address)?.length || 0;
+  const totalJobs = jobs.filter(i => i.employer === address)?.length || 0;
   const activeJobs = jobs?.filter(job => String(job.status) === 'active')?.length || 0;
 
   if (!isConnected || !address) {
@@ -106,7 +106,7 @@ const ClientPage: React.FC = () => {
             </button>
             <ConnectModal open={modalOpen} onClose={() => setModalOpen(false)} /> */}
         </div>
-        
+
       </div>
     );
   }
@@ -122,7 +122,7 @@ const ClientPage: React.FC = () => {
             </h1>
             <p className="text-gray-600 mt-1">Manage your organizations and job listings</p>
           </div>
-          
+
           {/* Stats */}
           <div className="flex flex-wrap gap-4 mt-4 md:mt-0">
             <div className="bg-indigo-50 rounded-lg p-3 flex items-center gap-2">
@@ -153,7 +153,7 @@ const ClientPage: React.FC = () => {
         <div className={`transition-all duration-300 ${animateTransition ? 'opacity-0 transform translate-x-6' : 'opacity-100 transform translate-x-0'}`}>
           {!selectedOrgId ? (
             <div>
-              
+
               <OrganizationList
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 organizations={organizations as unknown as any[]}
@@ -178,7 +178,7 @@ const ClientPage: React.FC = () => {
                   </h2>
                 </div>
               </div>
-              
+
               <JobList
                 jobs={jobs as Job[]}
                 isLoading={jobsPending}

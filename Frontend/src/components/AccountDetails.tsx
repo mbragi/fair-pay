@@ -6,17 +6,16 @@ import {
   ChainProvider,
   ChainIcon,
 } from "thirdweb/react";
-import { useAuth } from "../context/AuthContext";
-import { client } from "../client";
+import { useAuth } from "@context/AuthContext";
+import { client } from "@utils/client";
 import { baseSepolia } from "thirdweb/chains";
-import { useBalance } from "../hooks/useNativeBalance";
-
-const WBBT_ADDRESS = "0x934e4a5242603d25bB497303ab1b0f2367AA8a85";
+import { useBalance } from "@hooks/finance/useNativeBalance";
+import { WBBT_TOKEN_ADDRESS } from "@constants/contracts";
 
 export default function AccountDetails() {
   const { address, disconnect } = useAuth();
   const { balance: nativeBal, symbol: nativeSym, isLoading: loadingN } = useBalance();
-  const { balance: wbbtBal, symbol: wbbtSym, isLoading: loadingW } = useBalance(WBBT_ADDRESS);
+  const { balance: wbbtBal, symbol: wbbtSym, isLoading: loadingW } = useBalance(WBBT_TOKEN_ADDRESS);
 
   if (!address) return null;
 

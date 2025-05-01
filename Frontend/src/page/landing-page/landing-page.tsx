@@ -1,9 +1,9 @@
-import HeroSection from "../../components/landing-page-component/hero-section"
+import HeroSection from "@components/landing/hero-section"
 
 const LandingPage = () => {
   return (
     <div>
-      <HeroSection/>
+      <HeroSection />
     </div>
   )
 }

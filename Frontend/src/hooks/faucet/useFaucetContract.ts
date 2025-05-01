@@ -1,17 +1,16 @@
 import { useReadContract, useSendTransaction } from "thirdweb/react";
 import { client } from "../../client";
-import { baseSepolia } from "thirdweb/chains";
 import { getContract, prepareContractCall } from "thirdweb";
-import FAUCET_ABI from "../../abis/wbbtFaucet.json";
-
-const FAUCET_ADDRESS = "0x038280670Ff7473F0a3956d0303dc4022DCd140e"; 
+import FAUCET_ABI from "@abis/wbbtFaucet.json";
+import { WBBT_FAUCET_ADDRESS } from "@constants/contracts";
+import { BLOCKCHAIN_CONFIG } from "@constants/config";
 
 export const useFaucetContract = (userAddress?: string) => {
   // Get contract instance
   const faucetContract = getContract({
     client,
-    address: FAUCET_ADDRESS,
-    chain: baseSepolia,
+    address: WBBT_FAUCET_ADDRESS,
+    chain: BLOCKCHAIN_CONFIG.defaultChain,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     abi: FAUCET_ABI.abi as any,
   });

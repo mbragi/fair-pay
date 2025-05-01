@@ -12,9 +12,9 @@ import {
   User,
   Layers
 } from "lucide-react";
-import { useServiceProvider } from "../../hooks/useServiceProvider";
-import { formatEth, getStatusColor, getStatusText } from "../../utils/contractUtils";
-import Button from "../../components/common/Button";
+import { useServiceProvider } from "@hooks/worker/useServiceProvider";
+import { formatEth, getStatusColor, getStatusText } from "@utils/contractUtils";
+import Button from "@components/common/Button";
 
 const ServiceProviderDashboard = () => {
   const {

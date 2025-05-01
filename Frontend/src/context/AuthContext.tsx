@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { useActiveAccount, useActiveWallet, useDisconnect } from "thirdweb/react";
-import { useGoogleSmartAccount, usePasskeySmartAccount } from "../hooks/useSmartAccount";
+import { useGoogleSmartAccount, usePasskeySmartAccount } from "@hooks/auth/useSmartAccount";
 import { Wallet } from "thirdweb/wallets";
 
 interface AuthContextType {

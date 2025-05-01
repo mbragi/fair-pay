@@ -1,12 +1,12 @@
-import LandingPage from "./page/landing-page/landing-page";
-import HowItWorksSection from "./components/landing-page-component/howitworks-section";
-import FeaturesPage from "./components/landing-page-component/features-page";
+import LandingPage from "@page/landing-page/landing-page";
+import HowItWorksSection from "@components/landing/howitworks-section";
+import FeaturesPage from "@components/landing/features-page";
 import "@rainbow-me/rainbowkit/styles.css";
-import ClientPage from "./page/client-page/client-page";
-import ServiceProviderDashboard from "./page/employees-page/ServiceProviderDashboard";
-import FaucetPage from "./page/faucet-page/faucet-page";
+import ClientPage from "@page/client-page/client-page";
+import ServiceProviderDashboard from "@page/employees-page/ServiceProviderDashboard";
+import FaucetPage from "@page/faucet-page/faucet-page";
 import { ThirdwebProvider } from "thirdweb/react"
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider } from "@context/AuthContext";
 // set up sonner 
 import { Toaster } from "sonner";
 
