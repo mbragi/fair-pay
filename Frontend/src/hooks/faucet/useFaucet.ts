@@ -1,16 +1,31 @@
-import { useState } from "react";
-import {utils} from "ethers";
+import { useState, useEffect } from "react";
+import { utils } from "ethers";
 import { useFaucetContract } from "./useFaucetContract";
 import { useBalance } from "../../hooks/useNativeBalance";
 import { useAuth } from "../../context/AuthContext";
+import { useContractEvents } from "thirdweb/react";
+import { prepareEvent } from "thirdweb";
+
+// Prepare event definitions
+const tokenClaimedEvent = prepareEvent({
+  signature: "event TokensClaimed(address indexed user, uint256 amount)",
+});
+
+const faucetFundedEvent = prepareEvent({
+  signature: "event FaucetFunded(address indexed funder, uint256 amount)",
+});
 
 export const useFaucet = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [claimSuccess, setClaimSuccess] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<string>("");
   const [countdown, setCountdown] = useState<number>(0);
- // user from useAuth
-  const {address, isConnected}=useAuth();
+  const [claimRequestSent, setClaimRequestSent] = useState(false);
+  const [fundingReceived, setFundingReceived] = useState(false);
+
+  // user from useAuth
+  const { address, isConnected } = useAuth();
   // Get faucet contract data
   const {
     remainingAmount,
@@ -20,12 +35,59 @@ export const useFaucet = () => {
     claimTokens,
     refetchRemaining,
     refetchNextClaim,
+    faucetContract,
   } = useFaucetContract(address);
 
   // Get token contract data using useBalance
- const TOKEN_ADDRESS = "0x934e4a5242603d25bB497303ab1b0f2367AA8a85";
+  const TOKEN_ADDRESS = "0x934e4a5242603d25bB497303ab1b0f2367AA8a85";
   const { tokenBalance, tokenSymbol, tokenDecimals, refetchBalance } =
     useBalance(TOKEN_ADDRESS);
+
+  // Listen for contract events using useContractEvents
+  const { data: claimEvents } = useContractEvents({
+    contract: faucetContract,
+    events: [tokenClaimedEvent],
+  });
+
+  const { data: fundEvents } = useContractEvents({
+    contract: faucetContract,
+    events: [faucetFundedEvent],
+  });
+
+  // Handle claim events
+  useEffect(() => {
+    if (claimEvents && claimEvents.length > 0) {
+      // Get the latest event
+      const latestEvent = claimEvents[claimEvents.length - 1];
+
+      if (latestEvent) {
+        setClaimSuccess(true);
+        setClaimRequestSent(false);
+        // Hide notification after 5 seconds
+        setTimeout(() => setClaimSuccess(false), 5000);
+        // Refresh data
+        refetchRemaining();
+        refetchNextClaim();
+        refetchBalance();
+      }
+    }
+  }, [claimEvents, refetchBalance, refetchRemaining, refetchNextClaim]);
+
+  // Handle fund events
+  useEffect(() => {
+    if (fundEvents && fundEvents.length > 0) {
+      // Get the latest event
+      const latestEvent = fundEvents[fundEvents.length - 1];
+
+      if (latestEvent) {
+        setFundingReceived(true);
+        // Hide notification after 5 seconds
+        setTimeout(() => setFundingReceived(false), 5000);
+        // Refresh balances
+        refetchBalance();
+      }
+    }
+  }, [fundEvents, refetchBalance]);
 
   // Format token amount with proper decimals
   const formatTokenAmount = (
@@ -42,19 +104,21 @@ export const useFaucet = () => {
 
     try {
       setIsLoading(true);
-      // Thirdweb's mutateAsync already waits for the transaction to be mined
+      setClaimError(null);
+      setClaimRequestSent(true);
+
+      // Call the claim function - success will be handled by the event listener
       await claimTokens();
-      setClaimSuccess(true);
-
-      // Refresh data
-      refetchRemaining();
-      refetchNextClaim();
-      refetchBalance();
-
-      // Reset success message after 5 seconds
-      setTimeout(() => setClaimSuccess(false), 5000);
+      // Don't set success here as it's handled by the event listener
     } catch (error) {
       console.error("Error claiming tokens:", error);
+      setClaimError(
+        error instanceof Error ? error.message : "Failed to claim tokens"
+      );
+      setClaimRequestSent(false);
+
+      // Reset error message after 5 seconds
+      setTimeout(() => setClaimError(null), 5000);
     } finally {
       setIsLoading(false);
     }
@@ -88,10 +152,13 @@ export const useFaucet = () => {
     // State
     isLoading,
     claimSuccess,
+    claimError,
     timeRemaining,
     countdown,
     setCountdown,
     setTimeRemaining,
+    claimRequestSent,
+    fundingReceived,
 
     // Contract data
     remainingAmount,

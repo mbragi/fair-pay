@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { AlertCircle, Droplet, Clock, CheckCircle } from 'lucide-react';
+import { AlertCircle, Droplet, Clock, CheckCircle, XCircle, Send, Coins } from 'lucide-react';
 import { useFaucet } from '../../hooks/faucet';
 
 const FaucetPage: React.FC = () => {
@@ -9,9 +9,12 @@ const FaucetPage: React.FC = () => {
   // State
   isLoading,
   claimSuccess,
+  claimError,
   timeRemaining,
   setTimeRemaining,
   setCountdown,
+  claimRequestSent,
+  fundingReceived,
 
   // Contract data
   remainingAmount,
@@ -75,7 +78,7 @@ const FaucetPage: React.FC = () => {
   }, 1000);
 
   return () => clearInterval(timer);
- // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
  }, [nextClaimTime, refetchNextClaim]);
 
  // If not connected, show connect wallet message
@@ -118,6 +121,37 @@ const FaucetPage: React.FC = () => {
        </p>
       </div>
      </div>
+    </div>
+
+    {/* Toast Notifications */}
+    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
+     {claimSuccess && (
+      <div className="bg-green-50 text-green-700 p-3 rounded-lg flex items-center shadow-md animate-fade-in-down">
+       <CheckCircle className="mr-2" size={20} />
+       <span>Tokens claimed successfully!</span>
+      </div>
+     )}
+
+     {claimRequestSent && (
+      <div className="bg-blue-50 text-blue-700 p-3 rounded-lg flex items-center shadow-md animate-fade-in-down">
+       <Send className="mr-2" size={20} />
+       <span>Claim request sent! Waiting for confirmation...</span>
+      </div>
+     )}
+
+     {claimError && (
+      <div className="bg-red-50 text-red-700 p-3 rounded-lg flex items-center shadow-md animate-fade-in-down">
+       <XCircle className="mr-2" size={20} />
+       <span>Error: {claimError}</span>
+      </div>
+     )}
+
+     {fundingReceived && (
+      <div className="bg-purple-50 text-purple-700 p-3 rounded-lg flex items-center shadow-md animate-fade-in-down">
+       <Coins className="mr-2" size={20} />
+       <span>Faucet funded successfully!</span>
+      </div>
+     )}
     </div>
 
     {/* Main Content */}
@@ -163,13 +197,6 @@ const FaucetPage: React.FC = () => {
      {/* Claim Section */}
      <div className="p-6">
       <div className="flex flex-col items-center">
-       {claimSuccess && (
-        <div className="mb-4 bg-green-50 text-green-700 p-3 rounded-lg flex items-center">
-         <CheckCircle className="mr-2" size={20} />
-         <span>Tokens claimed successfully!</span>
-        </div>
-       )}
-
        <button
         onClick={handleClaim}
         disabled={isLoading || Number(nextClaimTime) > 0 || Number(remainingAmount) === 0}
