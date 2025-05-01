@@ -11,7 +11,6 @@ const FaucetPage: React.FC = () => {
   claimSuccess,
   timeRemaining,
   setTimeRemaining,
-  countdown,
   setCountdown,
 
   // Contract data
@@ -46,30 +45,38 @@ const FaucetPage: React.FC = () => {
    return;
   }
 
-  const formatTime = () => {
-   const hours = Math.floor(countdown / 3600);
-   const minutes = Math.floor((countdown % 3600) / 60);
-   const seconds = countdown % 60;
+  const formatTime = (count: number) => {
+   const hours = Math.floor(count / 3600);
+   const minutes = Math.floor((count % 3600) / 60);
+   const seconds = count % 60;
 
    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  setTimeRemaining(formatTime());
+  // Initial formatting
+  setTimeRemaining(formatTime(timeInSeconds));
 
   // Set up countdown timer
   const timer = setInterval(() => {
    setCountdown(prev => {
-    if (prev <= 1) {
+    const newCount = prev <= 1 ? 0 : prev - 1;
+
+    // Update the displayed time whenever countdown changes
+    if (newCount === 0) {
      clearInterval(timer);
+     setTimeRemaining('Available now');
      refetchNextClaim();
-     return 0;
+    } else {
+     setTimeRemaining(formatTime(newCount));
     }
-    return prev - 1;
+
+    return newCount;
    });
   }, 1000);
 
   return () => clearInterval(timer);
- }, [nextClaimTime, refetchNextClaim, countdown, setCountdown, setTimeRemaining]);
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ }, [nextClaimTime, refetchNextClaim]);
 
  // If not connected, show connect wallet message
  if (!isConnected || !address) {
