@@ -12,3 +12,17 @@ docs/
 
 # Dotenv file
 .env
+
+# Ignore node_modules in all Subfolders
+**/node_modules/
+node_modules/*
+!node_modules/@openzeppelin/
+!node_modules/@chainlink/
+!node_modules/hardhat/
+# Ignore .DS_Store files
+.DS_Store
+
+#Ignore lock files in all Subfolders
+**/yarn.lock
+**/package-lock.json
+**/pnpm-lock.yaml

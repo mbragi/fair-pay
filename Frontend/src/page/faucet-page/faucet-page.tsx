@@ -27,7 +27,7 @@ const FaucetPage: React.FC = () => {
   handleClaim,
   formatTokenAmount,
   refetchNextClaim
- } = useFaucet(address);
+ } = useFaucet();
 
  // Format time remaining until next claim
  useEffect(() => {

@@ -2,18 +2,9 @@ import { useReadContract, useSendTransaction } from "thirdweb/react";
 import { client } from "../../client";
 import { baseSepolia } from "thirdweb/chains";
 import { getContract, prepareContractCall } from "thirdweb";
+import FAUCET_ABI from "../../abis/wbbtFaucet.json";
 
-// ABI for the faucet contract
-const FAUCET_ABI = [
-  "function claimTokens() external",
-  "function timeUntilNextClaim(address user) external view returns (uint256)",
-  "function remainingClaimableAmount(address user) external view returns (uint256)",
-  "function totalClaimed(address) public view returns (uint256)",
-  "function DAILY_CLAIM_AMOUNT() public view returns (uint256)",
-  "function MAX_CLAIM_AMOUNT() public view returns (uint256)",
-];
-
-const FAUCET_ADDRESS = ""; // TODO: Replace with actual faucet contract address after deployment
+const FAUCET_ADDRESS = "0x038280670Ff7473F0a3956d0303dc4022DCd140e"; 
 
 export const useFaucetContract = (userAddress?: string) => {
   // Get contract instance
@@ -22,7 +13,7 @@ export const useFaucetContract = (userAddress?: string) => {
     address: FAUCET_ADDRESS,
     chain: baseSepolia,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    abi: FAUCET_ABI as any,
+    abi: FAUCET_ABI.abi as any,
   });
 
   // Get remaining claimable amount

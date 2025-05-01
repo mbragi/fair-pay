@@ -1,14 +1,16 @@
 import { useState } from "react";
 import {utils} from "ethers";
 import { useFaucetContract } from "./useFaucetContract";
-import { useTokenContract } from "./useTokenContract";
+import { useBalance } from "../../hooks/useNativeBalance";
+import { useAuth } from "../../context/AuthContext";
 
-export const useFaucet = (userAddress?: string) => {
+export const useFaucet = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [claimSuccess, setClaimSuccess] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<string>("");
   const [countdown, setCountdown] = useState<number>(0);
-
+ // user from useAuth
+  const {address, isConnected}=useAuth();
   // Get faucet contract data
   const {
     remainingAmount,
@@ -18,11 +20,12 @@ export const useFaucet = (userAddress?: string) => {
     claimTokens,
     refetchRemaining,
     refetchNextClaim,
-  } = useFaucetContract(userAddress);
+  } = useFaucetContract(address);
 
-  // Get token contract data
+  // Get token contract data using useBalance
+ const TOKEN_ADDRESS = "0x934e4a5242603d25bB497303ab1b0f2367AA8a85";
   const { tokenBalance, tokenSymbol, tokenDecimals, refetchBalance } =
-    useTokenContract(userAddress);
+    useBalance(TOKEN_ADDRESS);
 
   // Format token amount with proper decimals
   const formatTokenAmount = (
@@ -35,7 +38,7 @@ export const useFaucet = (userAddress?: string) => {
 
   // Handle claim button click
   const handleClaim = async () => {
-    if (!userAddress || !claimTokens) return;
+    if (!isConnected || !claimTokens) return;
 
     try {
       setIsLoading(true);
