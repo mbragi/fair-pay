@@ -1,16 +1,19 @@
 import { useGoogleSmartAccount } from "../../hooks/useSmartAccount";
+import Button from "../common/Button";
 
 const GoogleConnect = () => {
   const { connectWithGoogle, isConnecting } = useGoogleSmartAccount();
 
   return (
-    <button
+    <Button
       onClick={connectWithGoogle}
-      className="bg-blue-600 text-white px-4 py-2 rounded"
+      variant="primary"
+      isLoading={isConnecting}
+      loadingText="Connecting..."
       disabled={isConnecting}
     >
-      {isConnecting ? "Connecting..." : "Login with Google"}
-    </button>
+      Login with Google
+    </Button>
   );
 };
 

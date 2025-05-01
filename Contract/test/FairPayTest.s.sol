@@ -298,8 +298,10 @@ contract JobLifecycleTest is FairPayTest {
         vm.prank(orgOwner);
         IJobEscrow(jobAddress).assignWorker(worker);
         
-        vm.prank(worker);
-        IJobEscrow(jobAddress).confirmJob();
+    
+
+        vm.prank(orgOwner);
+        IJobEscrow(jobAddress).approveMilestone(0);
         
         vm.prank(worker);
         (bool success, bytes memory data) = jobAddress.call(

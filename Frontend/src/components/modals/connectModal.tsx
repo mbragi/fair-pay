@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useGoogleSmartAccount, usePasskeySmartAccount } from "../../hooks/useSmartAccount";
 import { useAuth } from "../../context/AuthContext";
+import Button from "../common/Button";
 
 interface ConnectModalProps {
   open: boolean;
@@ -68,29 +69,36 @@ const ConnectModal = ({ open, onClose }: ConnectModalProps) => {
         </h2>
 
         {/* Google Button */}
-        <button
+        <Button
           onClick={handleGoogleConnect}
           disabled={googleLoading}
-          className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50"
+          isLoading={googleLoading}
+          loadingText="Connecting..."
+          variant="primary"
+          fullWidth
         >
-          {googleLoading ? "Connecting..." : "Continue with Google"}
-        </button>
+          Continue with Google
+        </Button>
 
         {/* Passkey Button */}
-        <button
+        <Button
           onClick={handlePasskeyConnect}
           disabled={passkeyLoading}
-          className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium disabled:opacity-50"
+          isLoading={passkeyLoading}
+          loadingText="Connecting..."
+          variant="success"
+          fullWidth
         >
-          {passkeyLoading ? "Connecting..." : "Continue with Passkey"}
-        </button>
+          Continue with Passkey
+        </Button>
 
-        <button
+        <Button
           onClick={onClose}
-          className="text-sm text-gray-500 hover:text-red-600 block mx-auto mt-2"
+          variant="ghost"
+          className="mx-auto"
         >
           Cancel
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -77,6 +77,8 @@ interface IJobEscrow {
 
 
 
+}
+
 interface IWorkerDashboard {
     struct JobInfo {
         address jobAddress;

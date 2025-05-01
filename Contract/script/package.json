@@ -1,0 +1,13 @@
+{
+  "name": "faucet-funding-script",
+  "version": "1.0.0",
+  "description": "Script to approve and fund the WBBTFaucet contract",
+  "main": "FundFaucet.js",
+  "scripts": {
+    "fund": "node FundFaucet.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "ethers": "^6.8.0"
+  }
+}

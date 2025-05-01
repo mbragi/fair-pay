@@ -4,6 +4,7 @@ import FeaturesPage from "./components/landing-page-component/features-page";
 import "@rainbow-me/rainbowkit/styles.css";
 import ClientPage from "./page/client-page/client-page";
 import ServiceProviderDashboard from "./page/employees-page/ServiceProviderDashboard";
+import FaucetPage from "./page/faucet-page/faucet-page";
 import { ThirdwebProvider } from "thirdweb/react"
 import { AuthProvider } from "./context/AuthContext";
 // set up sonner 
@@ -23,13 +24,14 @@ function App() {
       <Route path="/" element={<Root />}>
         <Route index element={<LandingPage />} />
         <Route path="/howitworks" element={<HowItWorksSection />} />
-        <Route path="/features" element={<FeaturesPage/>} />
+        <Route path="/features" element={<FeaturesPage />} />
         <Route path="/clientpage" element={<ClientPage />} />
         <Route path="/providerspage" element={<ServiceProviderDashboard />} />
+        <Route path="/faucet" element={<FaucetPage />} />
       </Route>
     )
   )
-  
+
 
   return (
 
@@ -40,7 +42,7 @@ function App() {
           richColors
           closeButton
           theme="dark"
-         />
+        />
         <RouterProvider router={router} />
       </AuthProvider>
     </ThirdwebProvider>

@@ -12,6 +12,7 @@ export const useConfirmJob = () => {
       address: jobAddress,
       chain: baseSepolia,
       client,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       abi: jobEscrowAbi.abi as any,
     });
 

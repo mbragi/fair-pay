@@ -9,7 +9,7 @@ interface ConfirmJobButtonProps {
 }
 
 const ConfirmJobButton: React.FC<ConfirmJobButtonProps> = ({ jobAddress, onSuccess }) => {
-  const { confirmJob, isLoading } = useConfirmJob();
+  const { confirmJob, isPending } = useConfirmJob();
 
   const handleConfirm = async () => {
     try {
@@ -25,10 +25,10 @@ const ConfirmJobButton: React.FC<ConfirmJobButtonProps> = ({ jobAddress, onSucce
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       onClick={handleConfirm}
-      disabled={isLoading}
+      disabled={isPending}
       className="w-full py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium rounded-lg transition-all shadow-md flex items-center justify-center text-sm"
     >
-      {isLoading ? (
+      {isPending ? (
         <>
           <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
