@@ -87,24 +87,17 @@ const ClientPage: React.FC = () => {
 
   if (!isConnected || !address) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-white px-4">
+      <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-r from-indigo-50 to-blue-50 px-4">
         <div className="bg-gray-300 shadow-xl rounded-xl p-10 max-w-md text-center transform transition-all hover:scale-105">
           <div className="mb-6">
             <AlertCircle className="mx-auto h-16 w-16 text-indigo-600" />
           </div>
           <h2 className="text-3xl font-bold text-indigo-800 mb-4">
-            Connect Your Wallet
+            Please Login
           </h2>
           <p className="text-gray-600 mb-8 text-lg">
-            To access FairPay's powerful employer tools, please connect your smart wallet account.
+            To access FairPay's powerful employer tools, please login your smart wallet account.
           </p>
-          {/* <button
-              onClick={() => setModalOpen(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              Get Started
-            </button>
-            <ConnectModal open={modalOpen} onClose={() => setModalOpen(false)} /> */}
         </div>
         
       </div>
@@ -168,7 +161,7 @@ const ClientPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handleBack}
-                    className="bg-white hover:bg-gray-100 text-gray-700 p-2 rounded-lg flex items-center justify-center shadow-sm transition-all"
+                    className=" hover:bg-gray-100 text-gray-700 p-2 rounded-lg flex items-center justify-center shadow-sm transition-all"
                   >
                     <ChevronLeft size={20} />
                   </button>

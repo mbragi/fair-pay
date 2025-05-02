@@ -15,7 +15,7 @@ const HowItWorksSection: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'client' | 'provider'>('client');
   
   return (
-    <div id="how-it-works" className="bg-gray-50 py-24">
+    <div id="how-it-works" className="bg-gradient-to-r from-indigo-50 to-blue-50 py-24">
       <div className=" mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div className="text-center mb-16">

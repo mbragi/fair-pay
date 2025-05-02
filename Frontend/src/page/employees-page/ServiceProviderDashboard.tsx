@@ -10,13 +10,16 @@ import {
   DollarSign,
   ChevronRight,
   User,
-  Layers
+  Layers,
+  AlertCircle
 } from "lucide-react";
 import { useServiceProvider } from "../../hooks/useServiceProvider";
 import { formatEth, getStatusColor, getStatusText } from "../../utils/contractUtils";
 import Button from "../../components/common/Button";
+import { useAuth } from "../../context/AuthContext";
 
 const ServiceProviderDashboard = () => {
+   const { address, isConnected } = useAuth();
   const {
     jobs,
     loading,
@@ -36,15 +39,7 @@ const ServiceProviderDashboard = () => {
   } = useServiceProvider();
 
 
-  console.log("Jobs:", jobs);
-  console.log("Selected Job:", selectedJob);
-  console.log("Job Summary:", jobSummary);
-  console.log("Milestones:", milestones);
-  console.log("Progress:", progress);
-  console.log("Current Milestone:", currentMilestone);
-  console.log("Payment Info:", paymentInfo);
-  console.log("Token Name:", tokenName);
-
+  
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -60,6 +55,24 @@ const ServiceProviderDashboard = () => {
         return <FileText className="w-5 h-5 text-gray-500" />;
     }
   };
+  if (!isConnected || !address) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-r from-indigo-50 to-blue-50 px-4">
+        <div className="bg-gray-300 shadow-xl rounded-xl p-10 max-w-md text-center transform transition-all hover:scale-105">
+          <div className="mb-6">
+            <AlertCircle className="mx-auto h-16 w-16 text-indigo-600" />
+          </div>
+          <h2 className="text-3xl font-bold text-indigo-800 mb-4">
+            Please Login
+          </h2>
+          <p className="text-gray-600 mb-8 text-lg">
+            To access FairPay's powerful employer tools, please login your smart wallet account.
+          </p>
+        </div>
+        
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 pt-10">
