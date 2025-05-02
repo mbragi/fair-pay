@@ -14,20 +14,25 @@ const Header = () => {
   }, [address]);
 
   return (
-    <div className=" bg-white  fixed inset-x-0 z-50 md:h-20  py-4 px-6 shadow-md border-b">
+    <div className="bg-gradient-to-r from-indigo-50 to-blue-50  fixed inset-x-0 z-50 md:h-20  py-4 px-10">
       <header className=" flex justify-between items-center">
-        <Link to="/" className="text-2xl font-bold text-blue-700">
-          Fair<span className="text-indigo-600">Pay</span>
+        <Link to="/" className="text-2xl font-bold text-blue-700 flex flex-row items-center">
+          <div className="w-12 h-12">
+          <img src="/lock.png" alt="" />
+          </div>
+         <div className="mt-6 text-gray-600">
+         Fair<span className=" text-blue-400">Pay</span>
+         </div>
         </Link>
 
         <nav className="space-x-6 hidden md:flex">
-          <Link to="/features" className="hover:text-blue-600">
+          <Link to="/features" className="hover:text-blue-600 text-xl">
             Features
           </Link>
-          <Link to="/howitworks" className="hover:text-blue-600">
+          <Link to="/howitworks" className="hover:text-blue-600 text-xl">
             How it Works
           </Link>
-          <Link to="/faucet" className="hover:text-blue-600">
+          <Link to="/faucet" className="hover:text-blue-600 text-xl">
             Faucet
           </Link>
         </nav>

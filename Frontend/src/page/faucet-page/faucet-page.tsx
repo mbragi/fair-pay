@@ -84,16 +84,16 @@ const FaucetPage: React.FC = () => {
  // If not connected, show connect wallet message
  if (!isConnected || !address) {
   return (
-   <div className="flex flex-col items-center justify-center h-screen bg-white px-4">
+   <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-r from-indigo-50 to-blue-50 px-4">
     <div className="bg-gray-300 shadow-xl rounded-xl p-10 max-w-md text-center transform transition-all hover:scale-105">
      <div className="mb-6">
       <AlertCircle className="mx-auto h-16 w-16 text-indigo-600" />
      </div>
      <h2 className="text-3xl font-bold text-indigo-800 mb-4">
-      Connect Your Wallet
+      Please Login
      </h2>
      <p className="text-gray-600 mb-8 text-lg">
-      To claim WBBT tokens from the faucet, please connect your wallet first.
+      To claim WBBT tokens from the faucet, please login  first.
      </p>
     </div>
    </div>
